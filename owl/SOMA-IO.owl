@@ -204,8 +204,6 @@ Source: https://en.wikipedia.org/wiki/Archive_file#Archive_formats</rdfs:comment
 Source: https://en.wikipedia.org/wiki/Archive_file</rdfs:comment>
         <rdfs:label xml:lang="en">Archive Text</rdfs:label>
     </owl:Class>
-    
-
 
     <!-- http://www.ease-crc.org/ont/SOMA.owl#ArtificialAgent -->
 
@@ -244,11 +242,11 @@ Source: https://en.wikipedia.org/wiki/Archive_file</rdfs:comment>
                 </owl:intersectionOf>
             </owl:Class>
         </rdfs:subClassOf>
-        <rdfs:label xml:lang="en">An API Secification that describes the well known Client-Server pattern:
+        <rdfs:comment xml:lang="en">An API Secification that describes the well known Client-Server pattern:
 
 The Client-server model is a distributed application structure that partitions tasks or workloads between the providers of a resource or service, called servers, and service requesters, called clients Often clients and servers communicate over a computer network on separate hardware, but both client and server may reside in the same system. A server host runs one or more server programs, which share their resources with clients. A client usually does not share any of its resources, but it requests content or service from a server. Clients, therefore, initiate communication sessions with servers, which await incoming requests. Examples of computer applications that use the client-server model are email, network printing, and the World Wide Web.
 
-Source: https://en.wikipedia.org/wiki/Client%E2%80%93server_model</rdfs:label>
+Source: https://en.wikipedia.org/wiki/Client%E2%80%93server_model</rdfs:comment>
         <rdfs:label xml:lang="en">Client-Server Specification</rdfs:label>
     </owl:Class>
     
@@ -267,7 +265,6 @@ Source: https://en.wikipedia.org/wiki/Client%E2%80%93server_model</rdfs:label>
         <rdfs:label xml:lang="en">Client role</rdfs:label>
     </owl:Class>
     
-
 
     <!-- http://www.ease-crc.org/ont/SOMA.owl#Computer_Language -->
 
@@ -321,7 +318,6 @@ From Wikipedia: https://en.wikipedia.org/wiki/Computer_language</rdfs:comment>
 Source: https://en.wikipedia.org/wiki/Database</rdfs:comment>
     </owl:Class>
     
-
 
     <!-- http://www.ease-crc.org/ont/SOMA.owl#Digital_File -->
 
@@ -407,7 +403,6 @@ The exact interpretation depends upon the use. &quot;Instructions&quot; is tradi
 
 
     <!-- http://www.ease-crc.org/ont/SOMA.owl#ExecutableSoftware -->
-
     <owl:Class rdf:about="http://www.ease-crc.org/ont/SOMA.owl#ExecutableSoftware">
         <owl:equivalentClass>
             <owl:Class>
@@ -592,7 +587,6 @@ Source: https://en.wikipedia.org/wiki/Interface_(computing)</rdfs:comment>
     </owl:Class>
     
 
-
     <!-- http://www.ease-crc.org/ont/SOMA.owl#KnowledgeRepresentationLanguage -->
 
     <owl:Class rdf:about="http://www.ease-crc.org/ont/SOMA.owl#KnowledgeRepresentationLanguage">
@@ -601,7 +595,6 @@ Source: https://en.wikipedia.org/wiki/Interface_(computing)</rdfs:comment>
         <rdfs:label xml:lang="en">Knowledge Representation Language</rdfs:label>
     </owl:Class>
     
-
 
     <!-- http://www.ease-crc.org/ont/SOMA.owl#Language -->
 
@@ -800,7 +793,6 @@ Source: https://en.wikipedia.org/wiki/Relational_database</rdfs:comment>
     </owl:Class>
     
 
-
     <!-- http://www.ease-crc.org/ont/SOMA.owl#ServerRole -->
 
     <owl:Class rdf:about="http://www.ease-crc.org/ont/SOMA.owl#ServerRole">
@@ -940,7 +932,7 @@ We support seperate views:
 
     <owl:Class rdf:about="http://www.ease-crc.org/ont/SOMA.owl#StatisticalReasoner">
         <rdfs:subClassOf rdf:resource="http://www.ease-crc.org/ont/SOMA.owl#Reasoner"/>
-        <rdfs:label xml:lang="en">A Statistical Reasoner is a Reasoner that uses statistical or stochastical data to infer implicit information from explicit information. Examples are Hidden Markov Models and Neural Networks.</rdfs:label>
+        <rdfs:comment xml:lang="en">A Statistical Reasoner is a Reasoner that uses statistical or stochastical data to infer implicit information from explicit information. Examples are Hidden Markov Models and Neural Networks.</rdfs:comment>
         <rdfs:label xml:lang="en">Statistical reasoner</rdfs:label>
     </owl:Class>
     

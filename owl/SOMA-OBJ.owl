@@ -1460,7 +1460,7 @@ SubClassOf(SOMA:Color ObjectAllValuesFrom(<http://www.ontologydesignpatterns.org
 
 AnnotationAssertion(rdfs:comment SOMA:ColorRegion "Encodes the color of an object.")
 AnnotationAssertion(rdfs:label SOMA:ColorRegion "Color region")
-SubClassOf(SOMA:ColorRegion <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Region>)
+SubClassOf(SOMA:ColorRegion <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#PhysicalAttribute>)
 SubClassOf(SOMA:ColorRegion ObjectAllValuesFrom(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRegionFor> SOMA:Color))
 
 # Class: SOMA:CommitedObject (Commited object)
@@ -1754,7 +1754,7 @@ SubClassOf(SOMA:Gripper SOMA:PrehensileEffector)
 AnnotationAssertion(rdfs:comment SOMA:Hand "A prehensile effector including palm, fingers, and thumb.")
 SubClassOf(SOMA:Hand SOMA:PrehensileEffector)
 
-# Class: SOMA:HasQualityRegion (Has quality region)
+# Class: SOMA:HasQualityRegion (SOMA:HasQualityRegion)
 
 AnnotationAssertion(rdfs:comment SOMA:HasQualityRegion "The relation between an individual quality and a region.")
 AnnotationAssertion(rdfs:comment SOMA:HasQualityRegion "todo(DB): added for NEEMs (quale change), but not sure yet about it...")

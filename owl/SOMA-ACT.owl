@@ -670,6 +670,87 @@ Induction is often described as a move from many \"specifics\" (swan A is white,
 AnnotationAssertion(rdfs:label SOMA:InductiveReasoning "Inductive resoning"@en)
 SubClassOf(SOMA:InductiveReasoning SOMA:Reasoning)
 
+# Class: SOMA:InferenceRules (Inference rules)
+
+AnnotationAssertion(rdfs:comment SOMA:InferenceRules "The role of an object that is used to derive a conclusion from some premises.")
+AnnotationAssertion(rdfs:label SOMA:InferenceRules "Inference rules")
+SubClassOf(SOMA:InferenceRules SOMA:Knowledge)
+
+# Class: SOMA:InformationAcquisition (Information acquisition)
+
+AnnotationAssertion(rdfs:comment SOMA:InformationAcquisition "A mental task in which the executing agent acquires some information that was not immediately available to it before.
+A synonym might be \"Thinking\".
+
+Examples include recalling knowledge or inferring some information from other information."@en)
+AnnotationAssertion(rdfs:label SOMA:InformationAcquisition "Information acquisition"@en)
+EquivalentClasses(SOMA:InformationAcquisition ObjectIntersectionOf(SOMA:MentalTask ObjectSomeValuesFrom(SOMA:isTaskOfOutputRole SOMA:Knowledge)))
+
+# Class: SOMA:InformationDismissal (Information dismissal)
+
+AnnotationAssertion(rdfs:comment SOMA:InformationDismissal "A mental task in which the executing agent dismisses some information.
+
+An example is forgetting some knowledge."@en)
+AnnotationAssertion(rdfs:label SOMA:InformationDismissal "Information dismissal"@en)
+SubClassOf(SOMA:InformationDismissal SOMA:MentalTask)
+SubClassOf(SOMA:InformationDismissal ObjectSomeValuesFrom(SOMA:isTaskOfInputRole ObjectIntersectionOf(SOMA:ExcludedObject SOMA:Knowledge)))
+
+# Class: SOMA:InformationRetrieval (Information retrieval)
+
+AnnotationAssertion(rdfs:comment SOMA:InformationRetrieval "A mental task in which an Agent recalls some knowledge that has been memorized previously.
+
+Examples include a human remembering some information or a computer retrieving knowledge from a database.
+
+The difference to Remembering is that for this Task, we are concerned with knowledge about a previous world state. Memory Retrieval is more general in the sense that it also includes the retrieval of learned facts and rules."@en)
+AnnotationAssertion(rdfs:label SOMA:InformationRetrieval "Information retrieval"@en)
+SubClassOf(SOMA:InformationRetrieval SOMA:InformationAcquisition)
+SubClassOf(SOMA:InformationRetrieval ObjectSomeValuesFrom(SOMA:isTaskOfOutputRole SOMA:Knowledge))
+
+# Class: SOMA:InformationStorage (Information storage)
+
+AnnotationAssertion(rdfs:comment SOMA:InformationStorage "A mental task in which the executing agent persists some information for later recall, if necessary.
+
+An example is learning new knowledge."@en)
+AnnotationAssertion(rdfs:label SOMA:InformationStorage "Information storage"@en)
+SubClassOf(SOMA:InformationStorage SOMA:MentalTask)
+SubClassOf(SOMA:InformationStorage ObjectSomeValuesFrom(SOMA:isTaskOfInputRole ObjectIntersectionOf(<http://www.ease-crc.org/ont/SOMA-OBJ.owl#StoredObject> SOMA:Knowledge)))
+
+# Class: SOMA:Instructions (Instructions)
+
+AnnotationAssertion(rdfs:comment SOMA:Instructions "The role of a plan to follow during an execution task.")
+AnnotationAssertion(rdfs:label SOMA:Instructions "Instructions")
+SubClassOf(SOMA:Instructions SOMA:Item)
+
+# Class: SOMA:Interpreting (Interpreting)
+
+AnnotationAssertion(rdfs:comment SOMA:Interpreting "A task in which an Agent interpretes some information, e.g., makes sense of some incoming message or its visible surroundings."@en)
+AnnotationAssertion(rdfs:label SOMA:Interpreting "Interpreting"@en)
+SubClassOf(SOMA:Interpreting SOMA:DerivingInformation)
+
+# Class: SOMA:Introspecting (Introspecting)
+
+AnnotationAssertion(rdfs:comment SOMA:Introspecting "A mentalk task in which an Agent gathers and processes information about its own mental tasks via, e.g., Meta Reasoning."@en)
+AnnotationAssertion(rdfs:label SOMA:Introspecting "Introspecting"@en)
+SubClassOf(SOMA:Introspecting SOMA:InformationAcquisition)
+
+# Class: SOMA:Knowledge (SOMA:Knowledge)
+
+SubClassOf(SOMA:Knowledge SOMA:Item)
+
+# Class: SOMA:Labeling (Labeling)
+
+AnnotationAssertion(rdfs:label SOMA:Labeling "A task in which an agent annotates some objects with names, e.g., labeling the feeling of a tip-of-the-tongue event as such.")
+AnnotationAssertion(rdfs:label SOMA:Labeling "Labeling")
+SubClassOf(SOMA:Labeling SOMA:Interpreting)
+
+# Class: SOMA:Learning (Learning)
+
+AnnotationAssertion(rdfs:comment SOMA:Learning "The mental task of storing information for later use.
+
+This is more general than memorizing, as the later only captures declarative knowledge.")
+AnnotationAssertion(rdfs:label SOMA:Learning "Learning")
+SubClassOf(SOMA:Learning SOMA:InformationStorage)
+
+
 # Class: SOMA:Lifting (SOMA:Lifting)
 
 AnnotationAssertion(rdfs:comment SOMA:Lifting "todo: how to distinguish from e.g. 'pushing from the table'")

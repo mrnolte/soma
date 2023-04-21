@@ -718,7 +718,7 @@ DisjointClasses(SOMA:Delivering SOMA:Squeezing)
 
 AnnotationAssertion(rdfs:label SOMA:DerivingInformation "Deriving information")
 SubClassOf(SOMA:DerivingInformation SOMA:InformationAcquisition)
-SubClassOf(SOMA:DerivingInformation ObjectIntersectionOf(ObjectSomeValuesFrom(SOMA:isTaskOfInputRole SOMA:Conclusion) ObjectSomeValuesFrom(SOMA:isTaskOfOutputRole SOMA:Premise)))
+SubClassOf(SOMA:DerivingInformation ObjectIntersectionOf(ObjectSomeValuesFrom(SOMA:isTaskOfInputRole SOMA:Premise) ObjectSomeValuesFrom(SOMA:isTaskOfOutputRole SOMA:Conclusion)))
 
 # Class: SOMA:Dicing (SOMA:Dicing)
 
@@ -1449,5 +1449,5 @@ SubObjectPropertyOf(ObjectPropertyChain(SOMA:causesTransition SOMA:hasInitialSit
 SubObjectPropertyOf(ObjectPropertyChain(SOMA:causesTransition SOMA:hasTerminalScene <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesEvent>) SOMA:directlyCauses)
 SubObjectPropertyOf(ObjectPropertyChain(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesEvent> SOMA:hasInitialSituation SOMA:hasTerminalSituation <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesEvent>) SOMA:isReplacedBy)
 SubObjectPropertyOf(ObjectPropertyChain(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesEvent> SOMA:hasTerminalSituation SOMA:hasInitialSituation <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesEvent>) SOMA:replaces)
-SubObjectPropertyOf(ObjectPropertyChain(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRealizedBy> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasRole> SOMA:isInputRoleOf SOMA:isTaskOfCreatedRole <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRoleOf> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#realizes>) SOMA:directlyDerivedFrom)
+SubObjectPropertyOf(ObjectPropertyChain(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRealizedBy> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasRole> SOMA:isInputRoleOf SOMA:isTaskOfCreatedRole <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRoleOf> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#realizes>) SOMA:isDirectSourceFor)
 )

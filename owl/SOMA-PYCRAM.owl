@@ -1,0 +1,66 @@
+Prefix(:=<http://www.semanticweb.org/robin/ontologies/2025/4/untitled-ontology-8/>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+
+
+Ontology(<http://www.ease-crc.org/ont/SOMA-PYCRAM.owl>
+Import(<http://www.ease-crc.org/ont/SOMA-All.owl>)
+
+Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramActionDesignator>))
+Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>))
+Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramMotionDesignator>))
+Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramObjectDesignator>))
+Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#Resolving_of_PyCRAM_Designators>))
+
+
+
+############################
+#   Classes
+############################
+
+# Class: <http://www.ease-crc.org/ont/SOMA.owl#PyCramActionDesignator> (PyCRAM Action Designator)
+
+AnnotationAssertion(rdfs:comment <http://www.ease-crc.org/ont/SOMA.owl#PyCramActionDesignator> "A PyCRAM Designator expressing a Plan for a Task.")
+AnnotationAssertion(rdfs:label <http://www.ease-crc.org/ont/SOMA.owl#PyCramActionDesignator> "PyCRAM Action Designator")
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramActionDesignator> <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>)
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramActionDesignator> ObjectSomeValuesFrom(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#expresses> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Plan>))
+
+# Class: <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator> (PyCRAM Designator)
+
+AnnotationAssertion(rdfs:comment <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator> "A PyCRAM designator is a structured data object (possibly existing as a file or in memory only) that concretely encodes an (underspecified) description (dul:Description) used by the CRAM framework to resolve objects, actions, motions, etc. at runtime.
+
+As structured data, it conveys:
+- For object lookups: a dul:Configuration of feature‐roles (e.g., type, color, shape).
+- For actions and motions: a dul:Method that prescribes how to carry out an underspecified task or movement toward a goal.
+
+An underspecified PyCRAM designator will typically be resolved during a PyCRAM Resolution Task; the result is a new PyCRAM designator with more concrete descriptions; possibly even a reference to a single physical object.")
+AnnotationAssertion(rdfs:label <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator> "PyCRAM Designator")
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator> <http://www.ease-crc.org/ont/SOMA.owl#Structured_Text>)
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator> ObjectSomeValuesFrom(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#expresses> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Description>))
+
+# Class: <http://www.ease-crc.org/ont/SOMA.owl#PyCramMotionDesignator> (PyCRAM Motion Designator)
+
+AnnotationAssertion(rdfs:comment <http://www.ease-crc.org/ont/SOMA.owl#PyCramMotionDesignator> "A PyCRAM Designator expressing a Motion Description.")
+AnnotationAssertion(rdfs:label <http://www.ease-crc.org/ont/SOMA.owl#PyCramMotionDesignator> "PyCRAM Motion Designator")
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramMotionDesignator> <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>)
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramMotionDesignator> ObjectSomeValuesFrom(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#expresses> <http://www.ease-crc.org/ont/SOMA.owl#MotionDescription>))
+
+# Class: <http://www.ease-crc.org/ont/SOMA.owl#PyCramObjectDesignator> (PyCRAM Object Designator)
+
+AnnotationAssertion(rdfs:comment <http://www.ease-crc.org/ont/SOMA.owl#PyCramObjectDesignator> "A PyCRAM Designator expressing the Configuration of an Object.")
+AnnotationAssertion(rdfs:label <http://www.ease-crc.org/ont/SOMA.owl#PyCramObjectDesignator> "PyCRAM Object Designator")
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramObjectDesignator> <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>)
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#PyCramObjectDesignator> ObjectSomeValuesFrom(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#expresses> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Configuration>))
+
+# Class: <http://www.ease-crc.org/ont/SOMA.owl#Resolving_of_PyCRAM_Designators> (Resolving a PyCRAM Designator)
+
+AnnotationAssertion(rdfs:label <http://www.ease-crc.org/ont/SOMA.owl#Resolving_of_PyCRAM_Designators> "Resolving a PyCRAM Designator")
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#Resolving_of_PyCRAM_Designators> <http://www.ease-crc.org/ont/SOMA.owl#DerivingInformation>)
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#Resolving_of_PyCRAM_Designators> ObjectSomeValuesFrom(<http://www.ease-crc.org/ont/SOMA.owl#isTaskOfInputRole> <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>))
+SubClassOf(<http://www.ease-crc.org/ont/SOMA.owl#Resolving_of_PyCRAM_Designators> ObjectSomeValuesFrom(<http://www.ease-crc.org/ont/SOMA.owl#isTaskOfOutputRole> <http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>))
+
+
+)

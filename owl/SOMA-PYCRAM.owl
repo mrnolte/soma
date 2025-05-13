@@ -1,13 +1,14 @@
-Prefix(:=<http://www.semanticweb.org/robin/ontologies/2025/4/untitled-ontology-8/>)
+Prefix(:=<http://www.ease-crc.org/ont/SOMA-IO.owl#>)
+Prefix(dc:=<http://purl.org/dc/elements/1.1/>)
 Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
 Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
 Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
 Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(SOMA:=<http://www.ease-crc.org/ont/SOMA.owl#>)
 Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
 
-
 Ontology(<http://www.ease-crc.org/ont/SOMA-PYCRAM.owl>
-Import(<http://www.ease-crc.org/ont/SOMA-All.owl>)
+Import(<http://www.ease-crc.org/ont/SOMA-ALL.owl>)
 
 Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramActionDesignator>))
 Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>))

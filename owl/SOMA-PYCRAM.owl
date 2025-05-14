@@ -14,6 +14,26 @@ Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramDesignator>))
 Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramMotionDesignator>))
 Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#PyCramObjectDesignator>))
 Declaration(Class(<http://www.ease-crc.org/ont/SOMA.owl#Resolving_of_PyCRAM_Designators>))
+Declaration(ObjectProperty(<http://www.ease-crc.org/ont/SOMA.owl#isMethodFor>))
+############################
+#   Annotation Properties
+############################
+
+# Annotation Property: rdfs:label (rdfs:label)
+
+AnnotationAssertion(rdfs:comment rdfs:label "A special relation between a Method and a Task, to indicate that the Method describes a way to achieve the Task.")
+
+
+############################
+#   Object Properties
+############################
+
+# Object Property: <http://www.ease-crc.org/ont/SOMA.owl#isMethodFor> (is method for)
+
+AnnotationAssertion(rdfs:label <http://www.ease-crc.org/ont/SOMA.owl#isMethodFor> "is method for")
+SubObjectPropertyOf(<http://www.ease-crc.org/ont/SOMA.owl#isMethodFor> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#describes>)
+ObjectPropertyDomain(<http://www.ease-crc.org/ont/SOMA.owl#isMethodFor> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Method>)
+ObjectPropertyRange(<http://www.ease-crc.org/ont/SOMA.owl#isMethodFor> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Task>)
 
 
 

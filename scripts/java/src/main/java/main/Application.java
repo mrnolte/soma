@@ -23,8 +23,8 @@ public class Application {
     }
 
     private static String sourceRevision(Path directory) throws Exception {
-        var root = directory.toRealPath().getParent();
         try {
+            var root = directory.toRealPath().getParent();
             var process = new ProcessBuilder("git", "-c", "safe.directory=" + root, "-C", root.toString(), "rev-parse", "HEAD")
                 .redirectError(ProcessBuilder.Redirect.DISCARD).start();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) { process.destroyForcibly(); return "unknown"; }

@@ -47,7 +47,8 @@ public final class ConfigLoader {
                 base.resolve(string(ontology.get("output-directory"), "ontology.output-directory")),
                 new TransformationConfig(bool(transforms, "rewrite-gci", true), bool(transforms, "rewrite-iri", false),
                     bool(transforms, "is-defined-by", true), bool(transforms, "version-info", true)));
-            config.validatePaths();
+            // Input availability is checked by CIRunner before loading, within its reporting boundary.
+            config.validateOutputPaths();
             return config;
         }
     }

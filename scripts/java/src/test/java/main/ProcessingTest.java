@@ -173,6 +173,58 @@ class ProcessingTest {
         assertTrue(Files.readString(cfg.reportsDirectory().resolve("processing.json")).contains("failure"));
     }
 
+    @Test void missingInputsInvalidatePreviousSuccessThroughCli() throws Exception {
+        var source = source();
+        var before = snapshot(source);
+        var yaml = temp.resolve("config.yaml");
+        Files.writeString(yaml, "ontology:\n  directory: source\n  output-directory: export\n");
+        var manifest = temp.resolve("export/manifest.json");
+        var report = temp.resolve("export/reports/processing.json");
+        String[] args = {"--config=" + yaml, "--versionInfo=test"};
+        for (boolean missingDirectory : List.of(false, true)) {
+            Application.main(args);
+            assertTrue(Files.exists(manifest));
+            assertTrue(Files.readString(report).contains("success"));
+            var catalog = source.resolve("catalog-v001.xml");
+            String catalogText = Files.readString(catalog);
+            var backup = temp.resolve("source-backup");
+            if (missingDirectory) Files.move(source, backup);
+            else Files.delete(catalog);
+            var failure = assertThrows(IllegalArgumentException.class, () -> Application.main(args));
+            assertTrue(failure.getMessage().contains(missingDirectory ? "Missing ontology.directory" : "Missing local import catalog"));
+            assertFalse(Files.exists(manifest));
+            var result = new com.fasterxml.jackson.databind.ObjectMapper().readTree(report.toFile());
+            assertEquals("failure", result.get("status").asText());
+            assertTrue(result.get("message").asText().contains(failure.getMessage()));
+            if (missingDirectory) Files.move(backup, source);
+            else Files.writeString(catalog, catalogText);
+            assertEquals(before, snapshot(source));
+        }
+    }
+
+    @Test void aggregationPreservesRootAxiomsWhenRetainedImportCyclesBack() throws Exception {
+        var source = source();
+        Files.writeString(source.resolve("A.owl"), "Ontology(<http://example.org/A.owl> Import(<http://example.org/B.owl>) Import(<http://example.org/C.owl>) Declaration(Class(<http://example.org/A>)) SubClassOf(<http://example.org/A> <http://example.org/B>))");
+        Files.writeString(source.resolve("B.owl"), "Ontology(<http://example.org/B.owl> Import(<http://example.org/A.owl>) Declaration(Class(<http://example.org/B>)))");
+        Files.writeString(source.resolve("C.owl"), "Ontology(<http://example.org/C.owl> Declaration(Class(<http://example.org/C>)) SubClassOf(<http://example.org/C> <http://example.org/A>))");
+        catalog(source, "<uri name=\"http://example.org/A.owl\" uri=\"A.owl\"/><uri name=\"http://example.org/B.owl\" uri=\"B.owl\"/><uri name=\"http://example.org/C.owl\" uri=\"C.owl\"/>");
+        var before = snapshot(source);
+        var keep = new CollapseConfig(BASE + "A.owl", Path.of("A.owl"), List.of(BASE + "B.owl"), null);
+        var cfg = config(source, NONE, List.of(keep));
+        var result = CIRunner.run(cfg, null);
+        var original = result.sources().resolve(BASE + "A.owl");
+        var collapsed = result.exports().get("A.owl");
+        var expected = new HashSet<>(original.getAxioms());
+        expected.addAll(result.sources().resolve(BASE + "C.owl").getAxioms());
+        assertEquals(expected, collapsed.getAxioms());
+        assertEquals(Set.of(OWLManager.getOWLDataFactory().getOWLImportsDeclaration(IRI.create(BASE + "B.owl"))), collapsed.getImportsDeclarations());
+        var reload = new OntologyManager();
+        reload.load(new OntologyConfig(cfg.owlDirectory(), List.of(), cfg.format(), temp.resolve("unused"), NONE));
+        assertEquals(original.axioms(org.semanticweb.owlapi.model.parameters.Imports.INCLUDED).collect(java.util.stream.Collectors.toSet()),
+            reload.resolve(BASE + "A.owl").axioms(org.semanticweb.owlapi.model.parameters.Imports.INCLUDED).collect(java.util.stream.Collectors.toSet()));
+        assertEquals(before, snapshot(source));
+    }
+
     @Test void aggregationIncludesDeepImportsAndExcludesFullRetainedClosure() throws Exception {
         var source = source();
         Files.writeString(source.resolve("B.owl"), "Ontology(<http://example.org/B.owl> Import(<http://example.org/C.owl>) Declaration(Class(<http://example.org/B>)))");

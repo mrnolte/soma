@@ -85,7 +85,7 @@ public final class OntologySaver {
     }
 
     public void failure(OntologyConfig config, Exception failure) throws Exception {
-        config.validatePaths();
+        config.validateOutputPaths();
         Files.createDirectories(config.reportsDirectory());
         // An unsuccessful run must not leave a previous successful manifest behind.
         Files.deleteIfExists(config.outputDirectory().resolve("manifest.json"));

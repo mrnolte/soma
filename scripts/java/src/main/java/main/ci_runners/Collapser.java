@@ -23,7 +23,12 @@ public final class Collapser {
                 retained.add(ontology);
             }
             var excluded = new HashSet<OWLOntology>();
-            retained.forEach(o -> excluded.addAll(o.getImportsClosure()));
+            var pending = new ArrayDeque<>(retained);
+            while (!pending.isEmpty()) {
+                var ontology = pending.removeFirst();
+                // The root is replaced by this aggregation, so a back edge cannot supply its closure.
+                if (!ontology.equals(root) && excluded.add(ontology)) pending.addAll(ontology.getDirectImports());
+            }
             IRI iri = request.newIri() == null ? root.getOntologyID().getOntologyIRI().orElseThrow() : request.newIri();
             if (!outputIris.add(iri)) throw new IllegalArgumentException("Duplicate collapsed ontology IRI: " + iri);
             var collapsed = manager.createOntology(iri);

@@ -21,17 +21,24 @@ public record OntologyConfig(Path directory, Collection<CollapseConfig> toCollap
     }
     /** Resolve existing ancestors as well, so links cannot route output back into sources. */
     public void validatePaths() throws java.io.IOException {
+        validateOutputPaths();
         if (!Files.isDirectory(directory)) throw new IllegalArgumentException("Missing ontology.directory: " + directory);
         if (!Files.isRegularFile(directory.resolve("catalog-v001.xml")))
             throw new IllegalArgumentException("Missing local import catalog in " + directory);
-        var source = directory.toRealPath();
+    }
+    /** Reporting must remain possible when an input directory or its catalog has disappeared. */
+    public void validateOutputPaths() throws java.io.IOException {
+        var source = realDestination(directory);
         var output = realDestination(outputDirectory);
         if (output.startsWith(source) || source.startsWith(output))
             throw new IllegalArgumentException("Output directory must be separate from sources: " + output);
         if (Files.exists(outputDirectory) && !Files.isDirectory(outputDirectory))
             throw new IllegalArgumentException("Output is not a directory: " + outputDirectory);
-        if (Files.isDirectory(outputDirectory)) try (var children = Files.walk(outputDirectory); var inputs = Files.list(directory)) {
-            var sources = inputs.filter(Files::isRegularFile).toList();
+        if (Files.isDirectory(outputDirectory)) try (var children = Files.walk(outputDirectory)) {
+            List<Path> sources = List.of();
+            if (Files.isDirectory(directory)) try (var inputs = Files.list(directory)) {
+                sources = inputs.filter(Files::isRegularFile).toList();
+            }
             for (var child : children.toList()) {
                 if (Files.isSymbolicLink(child) || !child.toRealPath().startsWith(output))
                     throw new IllegalArgumentException("Output contains linked paths: " + child);

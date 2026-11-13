@@ -13,8 +13,8 @@ public final class CIRunner {
     }
 
     public static Result run(OntologyConfig config, String version, String commit) throws Exception {
-        config.validatePaths();
         try {
+            config.validatePaths();
             if (config.transformations().versionInfo() && (version == null || version.isBlank()))
                 throw new IllegalArgumentException("Version is required when version-info is enabled");
             var sources = new OntologyManager();

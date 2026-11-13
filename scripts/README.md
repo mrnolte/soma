@@ -26,3 +26,29 @@ where inputfile is a path to an OWL file. The following options are available:
 * -o, --output: path to a file where to store the results of the HermiT reasoner. If not provided, results are not stored
 
 Classification and subsumption reasoning will be performed on the input owl file. In case of non-satisfiable concepts, messages will be produced on stdout (ie. the console) by the script. A successful run of the script, that is, if no errors happen and no non-satisfiable concepts are found, produces no console output.
+
+
+**Java ontology CLI (A2 tooling foundation)**
+
+Install JDK 25 and set `JAVA_HOME`. From the repository root, build and run
+read-only compatibility tests with the checksum-pinned Maven 3.9.16 wrapper:
+
+```sh
+bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
+# Windows PowerShell:
+.\mvnw.cmd -B -ntp verify -f scripts/java/pom.xml
+```
+
+Tests cover the existing YAML configuration, local catalog loading of all source
+ontologies, and an OWLAPI roundtrip with HermiT consistency/unsatisfiability checks.
+`verify` currently builds the CLI; export lifecycle integration belongs to A3.
+
+The executable jar accepts `--help`, `--config=PATH` (default `application.yaml`),
+and the required `--versionInfo=VERSION` (or JVM property `soma.version`).
+Configuration paths remain relative to the working directory, as before. Run the
+legacy processing pipeline from `scripts/java` only on a disposable input copy:
+**it still overwrites source ontologies until A3 replaces the saver**.
+
+Spring Boot was removed: the CLI explicitly constructs the processing steps and
+reads YAML with SnakeYAML's safe constructor. The processing order is unchanged.
+See [the dependency review](java/DEPENDENCIES.md) for versions and scan scope.

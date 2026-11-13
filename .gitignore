@@ -36,3 +36,5 @@
 SOMA.owl
 build
 *.lst
+
+scripts/java/target/

@@ -1,41 +1,14 @@
 package main;
 
 import main.ci_runners.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+import main.config.OntologyConfig;
 
-@Component
-public class CIRunner implements CommandLineRunner {
-
-	@Autowired
-	private Collapser collapser;
-
-	@Autowired
-	private IsDefinedInAdder isDefinedInAdder;
-
-	@Autowired
-	private VersionInfoAdder versionInfoAdder;
-
-	@Autowired
-	private OntologySaver ontologySaver;
-
-	@Autowired
-	private SubclassNothingRewriter gciRewriter;
-
-	@Autowired
-	private IRINamespaceChecker iriNamespaceChecker;
-
-	// only use if needed
-	@Autowired
-	private IRINamespaceRewriter iriNamespaceRewriter;
-
-	@Override
-	public void run(final String... args) throws Exception {
-		final CIRunnable[] toRun = {iriNamespaceChecker, gciRewriter, isDefinedInAdder, versionInfoAdder, collapser, ontologySaver};
-		for (final var next : toRun) {
-			next.run();
-		}
-	}
-
+public class CIRunner {
+    public static void run(OntologyConfig config, String version) throws Exception {
+        var manager = new OntologyManager(config);
+        CIRunnable[] steps = {new IRINamespaceChecker(manager), new SubclassNothingRewriter(manager),
+            new IsDefinedInAdder(manager), new VersionInfoAdder(manager, version),
+            new Collapser(manager, config, version), new OntologySaver(manager, config)};
+        for (var step : steps) step.run();
+    }
 }

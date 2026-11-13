@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '18'
+          java-version: '25'
           cache: 'maven'
 
       - name: Create directories
@@ -38,14 +38,16 @@ jobs:
       - name: Compile current
         if: startsWith(github.ref, 'refs/tags/') != true
         run: |
-          mvn spring-boot:run -f scripts/java/pom.xml \
-             -Dspring-boot.run.arguments="--versionInfo=current"
+          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
+          cd scripts/java
+          java -jar target/IsDefinedInAdder-1.0-SNAPSHOT.jar "--versionInfo=current"
 
       - name: Compile tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          mvn spring-boot:run -f scripts/java/pom.xml \
-             -Dspring-boot.run.arguments="--versionInfo=${{ github.event.release.tag_name }}"
+          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
+          cd scripts/java
+          java -jar target/IsDefinedInAdder-1.0-SNAPSHOT.jar "--versionInfo=${{ github.event.release.tag_name }}"
 
       - name: Upload SOMA
         uses: actions/upload-artifact@v1

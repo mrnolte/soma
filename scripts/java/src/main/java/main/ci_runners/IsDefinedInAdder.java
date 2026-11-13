@@ -57,7 +57,7 @@ public class IsDefinedInAdder implements CIRunnable {
 			}
 		}
 		if (!addedEntities.isEmpty()) {
-			LOGGER.info("Added annotation {} to entities: {}", annotation, addedEntities);
+			LOGGER.info("Added annotation {} to {} entities", annotation, addedEntities.size());
 		}
 	}
 

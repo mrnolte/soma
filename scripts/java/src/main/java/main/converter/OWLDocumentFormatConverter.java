@@ -1,7 +1,6 @@
 package main.converter;
 
 import org.semanticweb.owlapi.formats.FunctionalSyntaxDocumentFormat;
-import org.semanticweb.owlapi.formats.ManchesterSyntaxDocumentFormat;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.formats.RDFXMLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;

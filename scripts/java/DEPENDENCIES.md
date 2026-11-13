@@ -1,4 +1,4 @@
-# Java dependency review — 2026-11-13
+# Java dependency review â€” 2026-11-13
 
 Baseline: upstream/master `5d27187e587a7b91e82361e3c52b05eb5d933dd3`, branch
 `ci/modernization`. Upstream SHA, open PRs #322/#323 and recent failed CI runs
@@ -55,6 +55,12 @@ Reproduce the dependency inventory from the repository root:
 bash ./mvnw -B -ntp -f scripts/java/pom.xml org.apache.maven.plugins:maven-dependency-plugin:3.8.1:tree
 ```
 
-A3 still owns non-mutating export processing; A4 owns the remaining workflow
-security and obsolete actions. Only Java setup and CLI invocation were adapted
-in existing workflows in this step. Hosted CI has not been triggered here.
+A3 subsequently replaced the Protege catalog implementation with a strict JDK
+XML parser, removing `org.protege.xmlcatalog` and its `log4j-over-slf4j` bridge.
+Jackson Databind is now declared directly for manifest/report JSON; its version
+is unchanged under the already reviewed Jackson BOM. The Maven verify lifecycle
+uses the pinned `exec-maven-plugin` 3.5.0 to launch the packaged CLI. These plugin
+internals remain outside the application advisory scan described above.
+
+A4 still owns workflow security and obsolete actions. Hosted CI has not been
+triggered here.

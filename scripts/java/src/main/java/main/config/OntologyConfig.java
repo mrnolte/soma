@@ -30,10 +30,18 @@ public record OntologyConfig(Path directory, Collection<CollapseConfig> toCollap
             throw new IllegalArgumentException("Output directory must be separate from sources: " + output);
         if (Files.exists(outputDirectory) && !Files.isDirectory(outputDirectory))
             throw new IllegalArgumentException("Output is not a directory: " + outputDirectory);
-        if (Files.isDirectory(outputDirectory)) try (var children = Files.walk(outputDirectory)) {
-            if (children.anyMatch(Files::isSymbolicLink)) throw new IllegalArgumentException("Output contains symbolic links: " + outputDirectory);
+        if (Files.isDirectory(outputDirectory)) try (var children = Files.walk(outputDirectory); var inputs = Files.list(directory)) {
+            var sources = inputs.filter(Files::isRegularFile).toList();
+            for (var child : children.toList()) {
+                if (Files.isSymbolicLink(child) || !child.toRealPath().startsWith(output))
+                    throw new IllegalArgumentException("Output contains linked paths: " + child);
+                if (Files.isRegularFile(child)) for (var input : sources)
+                    if (Files.isSameFile(child, input)) throw new IllegalArgumentException("Output is hard-linked to input: " + child);
+            }
         }
     }
+    public Path owlDirectory() { return outputDirectory.resolve("dist/owl"); }
+    public Path reportsDirectory() { return outputDirectory.resolve("reports"); }
     private static Path realDestination(Path path) throws java.io.IOException {
         if (Files.exists(path)) return path.toRealPath();
         return realDestination(path.getParent()).resolve(path.getFileName());

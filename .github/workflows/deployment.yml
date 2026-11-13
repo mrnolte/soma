@@ -30,53 +30,41 @@ jobs:
           java-version: '25'
           cache: 'maven'
 
-      - name: Create directories
-        run: |
-              mkdir -p $GITHUB_WORKSPACE/build/owl/current &&
-              mkdir mkdir -p $GITHUB_WORKSPACE/build/files
-
       - name: Compile current
         if: startsWith(github.ref, 'refs/tags/') != true
         run: |
-          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
-          cd scripts/java
-          java -jar target/IsDefinedInAdder-1.0-SNAPSHOT.jar "--versionInfo=current"
+          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml -Dsoma.version=current
 
       - name: Compile tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
-          cd scripts/java
-          java -jar target/IsDefinedInAdder-1.0-SNAPSHOT.jar "--versionInfo=${{ github.event.release.tag_name }}"
+          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml "-Dsoma.version=${{ github.event.release.tag_name }}"
 
       - name: Upload SOMA
         uses: actions/upload-artifact@v1
         with:
           name: SOMA Ontology
-          path: ./build/owl/current/SOMA.owl
+          path: ./build/ci/dist/owl/SOMA.owl
 
       - name: Upload SOMA-HOME
         uses: actions/upload-artifact@v1
         with:
           name: SOMA-HOME Ontology
-          path: ./build/owl/current/SOMA-HOME.owl
+          path: ./build/ci/dist/owl/SOMA-HOME.owl
 
       - name: Upload DUL
         uses: actions/upload-artifact@v1
         with:
           name: DUL Ontology
-          path: ./owl/DUL.owl
+          path: ./build/ci/dist/owl/DUL.owl
 
-      - name: Copy all OWL files to be deployed
-        run: sudo cp -n ./owl/*.owl $GITHUB_WORKSPACE/build/owl/current
-      
       - name: Compile NEEM Handbook
         uses: docker://blang/latex:ubuntu
         with:
           args: make -f ./docs/NEEM-handbook/Makefile
       
       - name: Copy NEEM Handbook
-        run: sudo cp $GITHUB_WORKSPACE/docs/NEEM-handbook/main.pdf $GITHUB_WORKSPACE/build/files/NEEM-Handbook.pdf
+        run: sudo cp $GITHUB_WORKSPACE/docs/NEEM-handbook/main.pdf $GITHUB_WORKSPACE/build/ci/dist/files/NEEM-Handbook.pdf
       
       - name: Deploy files current
         uses: JamesIves/github-pages-deploy-action@releases/v3
@@ -84,7 +72,7 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: build/files
+          FOLDER: build/ci/dist/files
           TARGET_FOLDER: /files/current
 
       - name: Deploy owl current
@@ -93,7 +81,7 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: build/owl/current/
+          FOLDER: build/ci/dist/owl/
           TARGET_FOLDER: /owl/current
 
       - name: Deploy owl tag
@@ -102,7 +90,7 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: build/owl/current/
+          FOLDER: build/ci/dist/owl/
           TARGET_FOLDER: owl/${{ github.event.release.tag_name }}
           #TARGET_FOLDER: owl/${{ GITHUB_REF/refs\/tags\// }}
           #TARGET_FOLDER: owl/${{ GITHUB_REF#refs/tags/ }}
@@ -114,20 +102,20 @@ jobs:
         run: |
           sudo ./scripts/OntoMetrics.sh \
           https://raw.githubusercontent.com/ease-crc/soma/gh-pages/owl/current/SOMA.owl \
-          $GITHUB_WORKSPACE/build/files
+          $GITHUB_WORKSPACE/build/ci/dist/files
 
       - name: Metrics
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           sudo ./scripts/OntoMetrics.sh \
           https://raw.githubusercontent.com/ease-crc/soma/gh-pages/owl/${{ github.event.release.tag_name }}/SOMA.owl \
-          $GITHUB_WORKSPACE/build/files
+          $GITHUB_WORKSPACE/build/ci/dist/files
 
       - name: Upload Metrics
         uses: actions/upload-artifact@v1
         with:
           name: Metrics
-          path: ./build/files/metrics.json
+          path: ./build/ci/dist/files/metrics.json
 
       - name: Deploy files current
         uses: JamesIves/github-pages-deploy-action@releases/v3
@@ -135,7 +123,7 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: build/files
+          FOLDER: build/ci/dist/files
           TARGET_FOLDER: /files/current
 
       - name: Deploy files tag
@@ -144,7 +132,7 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: build/files/
+          FOLDER: build/ci/dist/files/
           TARGET_FOLDER: files/${{ github.event.release.tag_name }}
           #TARGET_FOLDER: owl/${{ GITHUB_REF/refs\/tags\// }}
           #TARGET_FOLDER: owl/${{ GITHUB_REF#refs/tags/ }}

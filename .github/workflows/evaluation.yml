@@ -33,28 +33,36 @@ jobs:
           java-version: '25'
           cache: 'maven'
 
-      - name: Create directories
-        run: |
-              mkdir -p $GITHUB_WORKSPACE/build/owl/current &&
-              mkdir mkdir -p $GITHUB_WORKSPACE/build/files
-
       - name: Compile
         run: |
-          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
-          cd scripts/java
-          java -jar target/IsDefinedInAdder-1.0-SNAPSHOT.jar "--versionInfo=current"
+          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml -Dsoma.version=current
+
+      - name: Upload reasoner inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: SOMA Reasoner Inputs
+          path: ./build/ci/work/
+
+      - name: Upload processing reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SOMA Processing Reports
+          path: |
+            ./build/ci/reports/
+            ./build/ci/manifest.json
 
       - name: Upload OWL file
         uses: actions/upload-artifact@v4
         with:
           name: SOMA OWL
-          path: ./build/owl/current/SOMA-HOME.owl
+          path: ./build/ci/dist/owl/
 
       - name: Upload OWL files for Documentation
         uses: actions/upload-artifact@v4
         with:
           name: SOMA Files for Documentation
-          path: ./build/owl/current/
+          path: ./build/ci/dist/owl/
           retention-days: 2
 
   pitfalls:
@@ -68,15 +76,13 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Create directories
-        run: |
-              mkdir -p $GITHUB_WORKSPACE/build/owl/current &&
-              mkdir mkdir -p $GITHUB_WORKSPACE/build/files
-
       - uses: actions/download-artifact@v4
         with:
           name: SOMA OWL
-          path: ./build/owl/current/
+          path: ./build/ci/dist/owl/
+
+      - name: Create report directory
+        run: mkdir -p ./build/ci/reports
 
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -87,16 +93,16 @@ jobs:
           sudo pip install requests
 
       - name: Find pitfalls
-        run: sudo python ./scripts/oops.py $GITHUB_WORKSPACE/build/owl/current/SOMA-HOME.owl $GITHUB_WORKSPACE/build/files
+        run: sudo python ./scripts/oops.py $GITHUB_WORKSPACE/build/ci/dist/owl/SOMA-HOME.owl $GITHUB_WORKSPACE/build/ci/reports
 
       - name: Generate annotations
-        run: sudo python ./scripts/oops-github.py $GITHUB_WORKSPACE/build/files/oops.xml
+        run: sudo python ./scripts/oops-github.py $GITHUB_WORKSPACE/build/ci/reports/oops.xml
 
       - name: Upload pitfalls
         uses: actions/upload-artifact@v1
         with:
           name: OOPS Results
-          path: ./build/files/oops.xml
+          path: ./build/ci/reports/oops.xml
 
   consistency:
     name: HermiT
@@ -111,16 +117,16 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: SOMA OWL
-          path: ./build/owl/current
+          name: SOMA Reasoner Inputs
+          path: ./build/ci/work
 
-      - name: Download DUL
-        run: wget http://www.ease-crc.org/ont/DUL.owl -O ./build/DUL.owl
+      - name: Create report directory
+        run: mkdir -p ./build/ci/reports
 
       - name: HermiT
         uses: ./.github/actions/hermit
         with:
-          args: ./build/DUL.owl ./build/SOMA-HOME.owl
+          args: ./build/ci/work/SOMA-HOME.owl
 
       - name: Print HermiT output
         run: cat ./hermit.output
@@ -130,5 +136,5 @@ jobs:
         if: success()
         uses: docker://python:3.7.6-slim
         with:
-          args: python ./scripts/hermit_test.py -o ./owl/hermit.html ./hermit.output
+          args: python ./scripts/hermit_test.py -o ./build/ci/reports/hermit.html ./hermit.output
 

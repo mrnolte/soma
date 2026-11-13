@@ -45,7 +45,7 @@ class ProcessingTest {
         assertEquals(result.sources().resolve(BASE + "A.owl").getAxioms(), result.exports().get("A.owl").getAxioms());
         assertNotSame(result.sources().resolve(BASE + "A.owl"), result.working().resolve(BASE + "A.owl"));
         var reloaded = new OntologyManager();
-        reloaded.load(new OntologyConfig(temp.resolve("export"), List.of(), new FunctionalSyntaxDocumentFormat(), temp.resolve("unused"), NONE));
+        reloaded.load(new OntologyConfig(temp.resolve("export/dist/owl"), List.of(), new FunctionalSyntaxDocumentFormat(), temp.resolve("unused"), NONE));
         assertEquals(2, reloaded.documents().size());
         assertEquals(2, reloaded.resolve(BASE + "A.owl").getImportsClosure().size());
     }
@@ -58,7 +58,8 @@ class ProcessingTest {
         var exception = assertThrows(Exception.class, () -> CIRunner.run(config(source, NONE, List.of()), null));
         assertTrue(exception.toString().contains("Missing local catalog mapping"), exception.toString());
         assertEquals(before, snapshot(source));
-        assertFalse(Files.exists(temp.resolve("export")));
+        assertFalse(Files.exists(temp.resolve("export/dist/owl")));
+        assertTrue(Files.readString(temp.resolve("export/reports/processing.json")).contains("failure"));
     }
     @Test void duplicateAndMissingCatalogTargetsFail() throws Exception {
         var source = source();
@@ -67,7 +68,7 @@ class ProcessingTest {
         assertThrows(java.io.IOException.class, () -> CIRunner.run(config(source, NONE, List.of()), null));
         catalog(source, entry.replace("uri=\"B.owl\"", "uri=\"missing.owl\""));
         assertThrows(java.io.IOException.class, () -> CIRunner.run(config(source, NONE, List.of()), null));
-        assertFalse(Files.exists(temp.resolve("export")));
+        assertFalse(Files.exists(temp.resolve("export/dist/owl")));
     }
     @Test void validatesConfigBeforeLoading() throws Exception {
         var path = temp.resolve("config.yaml");
@@ -92,6 +93,10 @@ class ProcessingTest {
             var config = new OntologyConfig(source, List.of(), new FunctionalSyntaxDocumentFormat(), output, NONE);
             assertThrows(IllegalArgumentException.class, config::validatePaths);
         }
+        var output = Files.createDirectory(temp.resolve("linked-output"));
+        Files.createLink(output.resolve("A.owl"), source.resolve("A.owl"));
+        var config = new OntologyConfig(source, List.of(), new FunctionalSyntaxDocumentFormat(), output, NONE);
+        assertThrows(IllegalArgumentException.class, config::validatePaths);
     }
     @Test void transformationsOnlyChangeWorkingAxiomsAndPreserveGciAnnotations() throws Exception {
         var source = source();
@@ -139,6 +144,46 @@ class ProcessingTest {
         var before = snapshot(source);
         assertThrows(RuntimeException.class, () -> CIRunner.run(config(source, NONE, List.of()), null));
         assertEquals(before, snapshot(source));
-        assertFalse(Files.exists(temp.resolve("export")));
+        assertFalse(Files.exists(temp.resolve("export/dist/owl")));
+    }
+
+    @Test void iriRepairIsExplicitAndChangesOnlyWorkingEntities() throws Exception {
+        var source = source();
+        String bad = "http://example.org/SOMA-bad.owl#Entity";
+        Files.writeString(source.resolve("A.owl"), "Ontology(<http://example.org/SOMA.owl> Declaration(Class(<" + bad + ">)))");
+        var before = snapshot(source);
+        var result = CIRunner.run(config(source, new TransformationConfig(false, true, false, false), List.of()), null);
+        var df = OWLManager.getOWLDataFactory();
+        var original = df.getOWLDeclarationAxiom(df.getOWLClass(IRI.create(bad)));
+        var repaired = df.getOWLDeclarationAxiom(df.getOWLClass(IRI.create("http://example.org/SOMA.owl#Entity")));
+        assertEquals(Set.of(original), result.sources().documents().get("A.owl").getAxioms());
+        assertEquals(Set.of(repaired), result.exports().get("A.owl").getAxioms());
+        assertEquals(before, snapshot(source));
+    }
+
+    @Test void versionIsRequiredOnlyWhenEnabledAndFailureInvalidatesOldManifest() throws Exception {
+        var source = source();
+        var cfg = config(source, NONE, List.of());
+        CIRunner.run(cfg, null);
+        assertTrue(Files.exists(cfg.outputDirectory().resolve("manifest.json")));
+        assertTrue(Files.readString(cfg.reportsDirectory().resolve("processing.json")).contains("success"));
+        var versioned = config(source, new TransformationConfig(false, false, false, true), List.of());
+        assertThrows(IllegalArgumentException.class, () -> CIRunner.run(versioned, null));
+        assertFalse(Files.exists(cfg.outputDirectory().resolve("manifest.json")));
+        assertTrue(Files.readString(cfg.reportsDirectory().resolve("processing.json")).contains("failure"));
+    }
+
+    @Test void aggregationIncludesDeepImportsAndExcludesFullRetainedClosure() throws Exception {
+        var source = source();
+        Files.writeString(source.resolve("B.owl"), "Ontology(<http://example.org/B.owl> Import(<http://example.org/C.owl>) Declaration(Class(<http://example.org/B>)))");
+        Files.writeString(source.resolve("C.owl"), "Ontology(<http://example.org/C.owl> Declaration(Class(<http://example.org/C>)))");
+        catalog(source, "<uri name=\"http://example.org/B.owl\" uri=\"B.owl\"/><uri name=\"http://example.org/C.owl\" uri=\"C.owl\"/>");
+        var keep = new CollapseConfig(BASE + "A.owl", Path.of("A.owl"), List.of(BASE + "B.owl"), null);
+        var result = CIRunner.run(config(source, NONE, List.of(keep)), null);
+        assertEquals(result.sources().resolve(BASE + "A.owl").getAxioms(), result.exports().get("A.owl").getAxioms());
+        var merge = new CollapseConfig(BASE + "A.owl", Path.of("A.owl"), List.of(), null);
+        result = CIRunner.run(config(source, NONE, List.of(merge)), null);
+        assertEquals(3, result.exports().get("A.owl").getAxiomCount());
+        assertTrue(result.exports().get("A.owl").getImportsDeclarations().isEmpty());
     }
 }

@@ -21,7 +21,7 @@ jobs:
       - name: Download OWL file
         uses: actions/download-artifact@v4
         with:
-          path: ./build/owl/current
+          path: ./build/ci/dist/owl
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           name: SOMA Files for Documentation

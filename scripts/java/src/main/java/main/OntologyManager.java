@@ -38,6 +38,8 @@ public final class OntologyManager {
         for (var mapping : catalog.entries().entrySet()) {
             String filename = mapping.getValue().getFileName().toString();
             if (!documents.containsKey(filename)) throw new IllegalArgumentException("Catalog target is not an OWL input: " + mapping);
+            if (!Path.of(manager.getOntologyDocumentIRI(documents.get(filename)).toURI()).toRealPath().equals(mapping.getValue()))
+                throw new IllegalArgumentException("Catalog target is not a top-level OWL input: " + mapping);
             aliases.put(mapping.getKey(), filename);
         }
         for (var ontology : documents.values()) {

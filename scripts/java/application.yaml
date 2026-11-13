@@ -1,6 +1,6 @@
 ontology:
   directory: ../../owl/
-  output-directory: ../../build/ci/dist/owl/
+  output-directory: ../../build/ci/
   format: rdf_xml
   transformations:
     rewrite-gci: true

@@ -36,13 +36,26 @@ class RepositoryExportTest {
             assertEquals(expected, result.exports().get(request.outPath().toString()).getAxioms(), request.ontology());
         }
         var reload = new OntologyManager();
-        reload.load(new OntologyConfig(config.outputDirectory(), List.of(), config.format(), temp.resolve("unused"), baseline.transformations()));
+        reload.load(new OntologyConfig(config.owlDirectory(), List.of(), config.format(), temp.resolve("unused"), baseline.transformations()));
         assertEquals(16, reload.documents().size());
         var home = reload.resolve("http://www.ease-crc.org/ont/SOMA-HOME.owl");
         var soma = reload.resolve("http://www.ease-crc.org/ont/SOMA.owl");
         assertTrue(home.getImportsClosure().contains(soma));
         assertEquals(result.exports().get("SOMA.owl").getLogicalAxioms(), soma.getLogicalAxioms());
         assertTrue(soma.getAxiomCount() > result.sources().resolve("http://www.ease-crc.org/ont/SOMA.owl").getAxiomCount());
+        var reasonerInput = org.semanticweb.owlapi.apibinding.OWLManager.createOWLOntologyManager()
+            .loadOntologyFromOntologyDocument(config.outputDirectory().resolve("work/SOMA-HOME.owl").toFile());
+        assertTrue(reasonerInput.getImportsDeclarations().isEmpty());
+        assertEquals(home.axioms(org.semanticweb.owlapi.model.parameters.Imports.INCLUDED).collect(java.util.stream.Collectors.toSet()),
+            reasonerInput.getAxioms());
+        var json = new com.fasterxml.jackson.databind.ObjectMapper();
+        var manifest = json.readTree(config.outputDirectory().resolve("manifest.json").toFile());
+        assertEquals("test", manifest.get("version").asText());
+        assertEquals(17, manifest.get("sha256").size());
+        for (var entry : manifest.get("sha256").properties()) {
+            var actual = java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(config.outputDirectory().resolve(entry.getKey())));
+            assertEquals(entry.getValue().asText(), HexFormat.of().formatHex(actual));
+        }
         for (var item : result.sources().documents().entrySet()) {
             assertFalse(item.getValue().annotations().anyMatch(a -> a.getValue().equals(
                 result.sources().getOntologyManager().getOWLDataFactory().getOWLLiteral("test"))));

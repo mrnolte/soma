@@ -33,18 +33,43 @@ Classification and subsumption reasoning will be performed on the input owl file
 Install JDK 25 and set `JAVA_HOME`. From the repository root:
 
 ```sh
-bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
-java -jar scripts/java/target/IsDefinedInAdder-1.0-SNAPSHOT.jar --versionInfo=current
+bash ./mvnw -B -ntp verify -f scripts/java/pom.xml -Dsoma.version=current
 # Windows: use .\mvnw.cmd for Maven.
 ```
 
-The CLI also accepts `--config=PATH` (default `scripts/java/application.yaml`)
-and the JVM property `soma.version`. Paths inside YAML are resolved relative to
+`verify` runs the tests, builds the CLI, processes the ontologies and verifies
+the serialized exports with an independent manager and generated catalog.
+It defaults to version `current`; override it with `-Dsoma.version=VERSION`.
+The CLI can also run directly from the repository root:
+
+```sh
+java -jar scripts/java/target/IsDefinedInAdder-1.0-SNAPSHOT.jar --versionInfo=current
+```
+
+It accepts `--config=PATH` (default `scripts/java/application.yaml`),
+`--commit=SHA` and the JVM properties `soma.version` and `soma.commit`.
+The manifest records HEAD automatically when Git is available; for source
+archives supply `--commit=SHA`, otherwise the revision is recorded as `unknown`.
+Paths inside YAML are resolved relative to
 that file. `ontology.output-directory` is required and must be separate from the
-input directory. Collapse `out-path` values are filenames inside that output.
-The default exports all 16 source modules to `build/ci/dist/owl`, replacing
+input directory. It defaults to `build/ci`. Collapse `out-path` values are
+filenames inside its `dist/owl` subdirectory. The default exports all 16 source
+modules to `build/ci/dist/owl`, replacing
 SOMA.owl and SOMA-HOME.owl with the configured aggregations, plus a complete
 local XML import catalog. Inputs under `owl/` are read only.
+
+`build/ci/work` contains import-free Functional Syntax documents for external
+reasoners; these include the entire public export closure, including DUL.
+`build/ci/reports/processing.json` records success/module details or a processing
+failure. `build/ci/manifest.json` records commit, version, Java/Maven/OWLAPI,
+enabled transformations and SHA-256 hashes of the public OWL files and catalog.
+`build/ci/dist/files` is reserved for documentation. A failed processing run
+removes any previous success manifest; partially written or previous exports
+must not be published without a successful build. Invalid configuration errors
+appear on stderr before output begins. Unexpected stale OWL files in the export
+directory cause an error rather than being silently reused. Output paths must
+not link to source files, including hard links. Build cleanup must preserve
+`build/local-plans`; only `scripts/java/target` and `build/ci` are generated here.
 
 Processing order is explicit in `CIRunner`: load sources, copy into an independent
 manager, optionally repair entity namespaces, check namespaces, optionally rewrite
@@ -72,3 +97,6 @@ bytes on success and failure, exact synthetic axiom differences, complete SOMA
 aggregation and reload of all exports using only their local catalog. HermiT is
 currently exercised on a synthetic ontology; full semantic checks belong to B.
 See [the dependency review](java/DEPENDENCIES.md) for the A2 toolchain and scan.
+
+Use Maven with JDK 25 for verification. An IDE configured with JDK 21 cannot
+compile this project until its project/module SDK is updated to JDK 25.

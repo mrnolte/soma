@@ -8,6 +8,7 @@
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>2026-11-13T00:00:00Z</project.build.outputTimestamp>
+        <soma.version>current</soma.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -44,6 +45,10 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>2.7</version>
@@ -52,25 +57,6 @@
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi-distribution</artifactId>
             <version>5.5.1</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.stanford.protege</groupId>
-            <artifactId>org.protege.xmlcatalog</artifactId>
-            <version>1.0.5</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>net.sourceforge.owlapi</groupId>
-                    <artifactId>owlapi-impl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>net.sourceforge.owlapi</groupId>
-                    <artifactId>owlapi-osgidistribution</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -90,14 +76,32 @@
             <version>1.4.5.519</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>log4j-over-slf4j</artifactId>
-            <version>2.0.20</version>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>export-ontologies</id>
+                        <phase>verify</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>${java.home}/bin/java</executable>
+                            <workingDirectory>${project.basedir}/../..</workingDirectory>
+                            <arguments>
+                                <argument>-Dsoma.maven=${maven.version}</argument>
+                                <argument>-jar</argument>
+                                <argument>${project.build.directory}/${project.build.finalName}.jar</argument>
+                                <argument>--config=${project.basedir}/application.yaml</argument>
+                                <argument>--versionInfo=${soma.version}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>

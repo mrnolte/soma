@@ -55,7 +55,7 @@ public class IRINamespaceRewriter implements CIRunnable {
             for (final var change : changes) {
                 //LOGGER.info("Applying change {}", change);
                 if (manager.applyChange(change) == ChangeApplied.UNSUCCESSFULLY) {
-                    LOGGER.error("Could not apply change {}", change);
+                    throw new IllegalStateException("Could not apply IRI change: " + change);
                 }
             }
         }

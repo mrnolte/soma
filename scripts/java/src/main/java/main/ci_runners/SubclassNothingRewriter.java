@@ -56,7 +56,7 @@ public class SubclassNothingRewriter implements CIRunnable {
 				return Optional.empty();
 			}
 			if (subClassOfAxiom.getSubClass() instanceof OWLObjectIntersectionOf intersection) {
-				return rewriteIntersectionSubclassNothing(intersection);
+				return rewriteIntersectionSubclassNothing(intersection).map(a -> a.getAnnotatedAxiom(gci.annotations()));
 			}
 			if (subClassOfAxiom.getSubClass() instanceof OWLObjectSomeValuesFrom someValuesFrom) {
 				final var rewriting = df.getOWLObjectPropertyRangeAxiom(someValuesFrom.getProperty(),
@@ -70,7 +70,7 @@ public class SubclassNothingRewriter implements CIRunnable {
 	}
 
 	private static Optional<OWLAxiom> rewriteIntersectionSubclassNothing(final OWLObjectIntersectionOf intersection) {
-		var atomicClass = intersection.operands().filter(AsOWLClass::isOWLClass).findAny();
+		var atomicClass = intersection.operands().filter(AsOWLClass::isOWLClass).sorted(java.util.Comparator.comparing(Object::toString)).findFirst();
 		if (atomicClass.isEmpty()) {
 			atomicClass = intersection.operands().findFirst();
 		}
@@ -79,8 +79,9 @@ public class SubclassNothingRewriter implements CIRunnable {
 		}
 
 		final OWLClassExpression finalAtomicClass = atomicClass.get();
-		final var rewriting = df.getOWLSubClassOfAxiom(finalAtomicClass, df.getOWLObjectComplementOf(
-				df.getOWLObjectIntersectionOf(intersection.operands().filter(next -> !next.equals(finalAtomicClass)))));
+		final var others = intersection.operands().filter(next -> !next.equals(finalAtomicClass)).toList();
+		final var remainder = others.size() == 1 ? others.getFirst() : df.getOWLObjectIntersectionOf(others);
+		final var rewriting = df.getOWLSubClassOfAxiom(finalAtomicClass, df.getOWLObjectComplementOf(remainder));
 		return Optional.of(rewriting);
 	}
 }

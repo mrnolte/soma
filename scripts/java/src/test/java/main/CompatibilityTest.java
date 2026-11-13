@@ -15,13 +15,15 @@ class CompatibilityTest {
     @Test void yamlConfiguration() throws Exception {
         var config = ConfigLoader.load(Path.of("application.yaml"));
         assertEquals(2, config.toCollapse().size());
-        assertEquals(java.util.List.of("DUL", "SOMA"), new java.util.ArrayList<>(config.toCollapse()).get(1).except());
+        assertEquals(java.util.List.of("http://www.ease-crc.org/ont/DUL.owl", "http://www.ease-crc.org/ont/SOMA.owl"), new java.util.ArrayList<>(config.toCollapse()).get(1).except());
         assertEquals(IRI.create("http://www.ease-crc.org/ont/SOMA.owl"), config.toCollapse().iterator().next().newIri());
         assertNotNull(config.format());
     }
     @Test void loadRepositoryWithLocalCatalog() throws Exception {
         var config = ConfigLoader.load(Path.of("application.yaml"));
-        var manager = new OntologyManager(config).getOntologyManager();
+        var sources = new OntologyManager();
+        sources.load(config);
+        var manager = sources.getOntologyManager();
         try (var files = Files.list(config.directory())) {
             assertEquals(files.filter(path -> path.toString().endsWith(".owl")).count(), manager.ontologies().count());
         }

@@ -28,27 +28,47 @@ where inputfile is a path to an OWL file. The following options are available:
 Classification and subsumption reasoning will be performed on the input owl file. In case of non-satisfiable concepts, messages will be produced on stdout (ie. the console) by the script. A successful run of the script, that is, if no errors happen and no non-satisfiable concepts are found, produces no console output.
 
 
-**Java ontology CLI (A2 tooling foundation)**
+**Java ontology CLI (A3 processing)**
 
-Install JDK 25 and set `JAVA_HOME`. From the repository root, build and run
-read-only compatibility tests with the checksum-pinned Maven 3.9.16 wrapper:
+Install JDK 25 and set `JAVA_HOME`. From the repository root:
 
 ```sh
 bash ./mvnw -B -ntp verify -f scripts/java/pom.xml
-# Windows PowerShell:
-.\mvnw.cmd -B -ntp verify -f scripts/java/pom.xml
+java -jar scripts/java/target/IsDefinedInAdder-1.0-SNAPSHOT.jar --versionInfo=current
+# Windows: use .\mvnw.cmd for Maven.
 ```
 
-Tests cover the existing YAML configuration, local catalog loading of all source
-ontologies, and an OWLAPI roundtrip with HermiT consistency/unsatisfiability checks.
-`verify` currently builds the CLI; export lifecycle integration belongs to A3.
+The CLI also accepts `--config=PATH` (default `scripts/java/application.yaml`)
+and the JVM property `soma.version`. Paths inside YAML are resolved relative to
+that file. `ontology.output-directory` is required and must be separate from the
+input directory. Collapse `out-path` values are filenames inside that output.
+The default exports all 16 source modules to `build/ci/dist/owl`, replacing
+SOMA.owl and SOMA-HOME.owl with the configured aggregations, plus a complete
+local XML import catalog. Inputs under `owl/` are read only.
 
-The executable jar accepts `--help`, `--config=PATH` (default `application.yaml`),
-and the required `--versionInfo=VERSION` (or JVM property `soma.version`).
-Configuration paths remain relative to the working directory, as before. Run the
-legacy processing pipeline from `scripts/java` only on a disposable input copy:
-**it still overwrites source ontologies until A3 replaces the saver**.
+Processing order is explicit in `CIRunner`: load sources, copy into an independent
+manager, optionally repair entity namespaces, check namespaces, optionally rewrite
+GCIs, add isDefinedBy and version annotations, aggregate, then export. Only the
+exporter writes files. The four transformations are individually configurable in
+YAML. Version is required only when version annotations are enabled. Defaults
+preserve the previous enabled steps; IRI repair stays off.
 
-Spring Boot was removed: the CLI explicitly constructs the processing steps and
-reads YAML with SnakeYAML's safe constructor. The processing order is unchanged.
-See [the dependency review](java/DEPENDENCIES.md) for versions and scan scope.
+Catalog imports must resolve to existing local files; missing or duplicate
+mappings fail even when OWLAPI has already cached the imported ontology. Explicit
+catalog aliases remain supported: Upstream HOME imports SOMA-ALL.owl while the
+actual ontology IRI is SOMA-All.owl. Working imports are canonicalized through
+the catalog, without changing source files. A separate generated catalog ensures
+HOME loads the exported SOMA aggregation rather than the small source SOMA module.
+No network fallback, catalog delegation or rewrite directives are supported.
+
+Intentional changes: aggregation uses the entire transitive import closure and
+excludes the entire closure of retained imports. Root ontology annotations are
+preserved. GCI rewrites retain annotations and avoid singleton intersections.
+Manchester export is rejected because it can lose GCIs; use functional, rdf_xml
+or owl_xml. Configuration mistakes and ambiguous ontology references fail early.
+
+Tests cover invalid configuration, missing/ambiguous imports, unchanged source
+bytes on success and failure, exact synthetic axiom differences, complete SOMA
+aggregation and reload of all exports using only their local catalog. HermiT is
+currently exercised on a synthetic ontology; full semantic checks belong to B.
+See [the dependency review](java/DEPENDENCIES.md) for the A2 toolchain and scan.

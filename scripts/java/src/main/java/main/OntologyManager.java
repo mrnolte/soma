@@ -1,76 +1,88 @@
 package main;
 
 import main.config.OntologyConfig;
-import org.protege.xmlcatalog.owlapi.XMLCatalogIRIMapper;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.semanticweb.owlapi.model.parameters.OntologyCopy;
+import java.nio.file.*;
+import java.util.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.DirectoryIteratorException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+/** Owns either loaded sources or independent working ontologies. Construction performs no I/O. */
+public final class OntologyManager {
+    private final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+    private final Map<String, OWLOntology> documents = new LinkedHashMap<>();
+    private final Map<IRI, String> aliases = new LinkedHashMap<>();
 
-/**
- * Class to manage the resources that are associated with an {@link OWLOntology}.
- */
-public class OntologyManager {
+    public OntologyManager() {}
 
-	private static final Path XML_CATALOG_PATH = Path.of("catalog-v001.xml");
+    public void load(OntologyConfig config) throws Exception {
+        if (!documents.isEmpty()) throw new IllegalStateException("Ontologies already loaded");
+        config.validatePaths();
+        var catalog = new GuardingXmlCatalogIriMapper(config.directory().resolve("catalog-v001.xml").toFile());
+        manager.getIRIMappers().add(catalog);
+        manager.setOntologyLoaderConfiguration(new OWLOntologyLoaderConfiguration()
+            .setMissingImportHandlingStrategy(MissingImportHandlingStrategy.THROW_EXCEPTION));
+        List<Path> paths;
+        try (var files = Files.list(config.directory())) {
+            paths = files.filter(p -> p.toString().endsWith(".owl")).sorted().toList();
+        }
+        if (paths.isEmpty()) throw new IllegalArgumentException("No OWL inputs in " + config.directory());
+        for (var path : paths) {
+            var document = path.toRealPath();
+            var loaded = manager.ontologies().filter(o -> Path.of(manager.getOntologyDocumentIRI(o).toURI()).toAbsolutePath().normalize().equals(document)).findFirst();
+            var ontology = loaded.isPresent() ? loaded.get() : manager.loadOntologyFromOntologyDocument(path.toFile());
+            if (ontology.getOntologyID().isAnonymous()) throw new IllegalArgumentException("Anonymous ontology: " + path);
+            documents.put(path.getFileName().toString(), ontology);
+        }
+        // Validate imports even when OWLAPI has already cached a matching ontology IRI.
+        for (var mapping : catalog.entries().entrySet()) {
+            String filename = mapping.getValue().getFileName().toString();
+            if (!documents.containsKey(filename)) throw new IllegalArgumentException("Catalog target is not an OWL input: " + mapping);
+            aliases.put(mapping.getKey(), filename);
+        }
+        for (var ontology : documents.values()) {
+            var iri = ontology.getOntologyID().getOntologyIRI().orElseThrow();
+            String name = documents.entrySet().stream().filter(e -> e.getValue() == ontology).findFirst().orElseThrow().getKey();
+            String existing = aliases.putIfAbsent(iri, name);
+            if (existing != null && !existing.equals(name)) throw new IllegalArgumentException("Catalog maps ontology IRI to wrong document: " + iri);
+            for (var declaration : ontology.getImportsDeclarations()) {
+                var target = catalog.entries().get(declaration.getIRI());
+                if (target == null) throw new IllegalArgumentException("Missing local catalog mapping: " + declaration.getIRI());
+                var imported = manager.getImportedOntology(declaration);
+                if (imported == null || !Path.of(manager.getOntologyDocumentIRI(imported).toURI()).toRealPath().equals(target))
+                    throw new IllegalArgumentException("Import does not match catalog: " + declaration.getIRI());
+            }
+        }
+    }
 
-	/**
-	 * {@link Logger} of this class.
-	 */
-	private static final Logger LOGGER = LoggerFactory.getLogger(OntologyManager.class);
+    public OntologyManager workingCopy() throws OWLOntologyCreationException {
+        var copy = new OntologyManager();
+        for (var item : documents.entrySet()) {
+            var ontology = copy.manager.copyOntology(item.getValue(), OntologyCopy.SHALLOW);
+            copy.documents.put(item.getKey(), ontology);
+        }
+        copy.aliases.putAll(aliases);
+        // OWLAPI's source-manager alias cache is not copied. Resolve catalog aliases to
+        // canonical ontology IRIs on the working copy, preserving the source import graph.
+        for (var ontology : copy.documents.values()) {
+            for (var declaration : ontology.getImportsDeclarations()) {
+                var target = copy.documents.get(copy.aliases.get(declaration.getIRI()));
+                var canonical = target.getOntologyID().getOntologyIRI().orElseThrow();
+                if (!canonical.equals(declaration.getIRI())) {
+                    copy.manager.applyChange(new RemoveImport(ontology, declaration));
+                    copy.manager.applyChange(new AddImport(ontology, copy.manager.getOWLDataFactory().getOWLImportsDeclaration(canonical)));
+                }
+            }
+        }
+        return copy;
+    }
 
-	/**
-	 * {@link OWLOntologyManager} that holds the managed ontology.
-	 */
-	private final OWLOntologyManager ontologyManager = OWLManager.createConcurrentOWLOntologyManager();
-
-	public OntologyManager(final OntologyConfig config) throws OWLOntologyCreationException, IOException {
-		loadCatalog(config.directory());
-		loadOntologies(config.directory());
-	}
-
-	@SuppressWarnings("OverlyBroadThrowsClause")
-	private void loadCatalog(final Path ontologyDirectory) throws IOException {
-		// use this if you want to prohibit ontologies being loaded from online
-		final OWLOntologyIRIMapper xmlCatalogIriMapper = new GuardingXmlCatalogIriMapper(
-				ontologyDirectory.resolve(XML_CATALOG_PATH).toFile());
-		// use this if you want to allow to load ontologies from online
-		// final OWLOntologyIRIMapper xmlCatalogIriMapper = new XMLCatalogIRIMapper(
-		// 		ontologyDirectory.resolve(XML_CATALOG_PATH).toFile());
-		ontologyManager.getIRIMappers().add(xmlCatalogIriMapper);
-	}
-
-	private void loadOntologies(final Path ontologyDirectory) throws OWLOntologyCreationException, IOException {
-		// traverse all .owl files and load the ontologies
-		try (final DirectoryStream<Path> stream = Files.newDirectoryStream(ontologyDirectory, "*.{owl}")) {
-			for (final Path entry : stream) {
-				loadOntology(entry.toFile());
-			}
-		} catch (final DirectoryIteratorException ex) {
-			// I/O error encountered during the iteration, the cause is an IOException
-			throw ex.getCause();
-		}
-	}
-
-	private void loadOntology(final File ontologyFile) throws OWLOntologyCreationException {
-		try {
-			LOGGER.info("Loading '{}'", ontologyFile.getName());
-			ontologyManager.loadOntologyFromOntologyDocument(ontologyFile);
-			LOGGER.info("Loaded '{}'", ontologyFile.getName());
-		} catch (final OWLOntologyAlreadyExistsException e) {
-			LOGGER.info("Skipping '{}' (already loaded)", ontologyFile.getName());
-			// was already imported via any other file; do nothing
-		}
-	}
-
-	public OWLOntologyManager getOntologyManager() {
-		return ontologyManager;
-	}
+    public OWLOntology resolve(String reference) {
+        var matches = documents.values().stream().filter(o -> main.config.CollapseConfig.containsReferenceOf(List.of(reference), o)).distinct().toList();
+        if (matches.size() != 1) throw new IllegalArgumentException("Expected one ontology for " + reference + ", found " + matches.size());
+        return matches.getFirst();
+    }
+    public Map<String, OWLOntology> documents() { return Collections.unmodifiableMap(documents); }
+    public Map<IRI, String> aliases() { return Collections.unmodifiableMap(aliases); }
+    public OWLOntologyManager getOntologyManager() { return manager; }
 }

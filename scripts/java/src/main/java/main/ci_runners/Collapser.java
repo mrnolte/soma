@@ -1,115 +1,42 @@
 package main.ci_runners;
 
 import main.OntologyManager;
-import main.config.CollapseConfig;
-import main.config.OntologyConfig;
+import main.config.*;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.model.parameters.Imports;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.*;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-public class Collapser implements CIRunnable {
-
-	/**
-	 * {@link Logger} of this class.
-	 */
-	private static final Logger LOGGER = LoggerFactory.getLogger(Collapser.class);
-	private final OntologyManager ontologyManager;
-	private final OntologyConfig ontologyConfig;
-	private final OWLOntologyManager collapseManager;
-	private final String versionInfo;
-
-	public Collapser(final OntologyManager ontologyManager, final OntologyConfig ontologyConfig,
-	                 final String versionInfo) {
-		this.ontologyManager = ontologyManager;
-		this.ontologyConfig = ontologyConfig;
-		collapseManager = OWLManager.createOWLOntologyManager();
-		this.versionInfo = versionInfo;
-	}
-
-	@Override
-	public void run() throws OWLOntologyCreationException, IOException, OWLOntologyStorageException {
-		for (final var collapseConfig : ontologyConfig.toCollapse()) {
-			collapse(collapseConfig);
-		}
-	}
-
-	private void collapse(final CollapseConfig collapseConfig)
-			throws OWLOntologyCreationException, OWLOntologyStorageException {
-		final var toCollapse = getReferencedOntology(collapseConfig);
-		final var requestedIRI = getRequestedIRI(collapseConfig, toCollapse);
-
-		final var collapsed = collapseManager.createOntology(requestedIRI);
-
-		LOGGER.info("Collapsing {}", collapseConfig.ontology());
-		addAxioms(collapsed, toCollapse, collapseConfig.except());
-
-		LOGGER.info("Adding versionInfo to {}", collapseConfig.ontology());
-		final var df = OWLManager.getOWLDataFactory();
-		final var versionAnnotation = df.getOWLAnnotation(df.getOWLVersionInfo(), df.getOWLLiteral(versionInfo));
-		collapsed.getOWLOntologyManager().applyChange(new AddOntologyAnnotation(collapsed, versionAnnotation));
-
-		LOGGER.info("Saving collapsed {} to {} ", collapseConfig.ontology(),
-		            IRI.create(collapseConfig.outPath().toUri()));
-		collapsed.saveOntology(IRI.create(collapseConfig.outPath().toUri()));
-	}
-
-	private static void addAxioms(final OWLOntology collapsed, final OWLOntology toCollapse,
-	                              final Collection<String> except) {
-		if ((except == null || except.isEmpty())) {
-			LOGGER.info("No exceptions that should be imported instead of being merged");
-			// easy way, might also be faster
-			collapsed.addAxioms(toCollapse.axioms(Imports.INCLUDED));
-			return;
-		}
-		// hard way
-		final Set<OWLOntology> importingImports = toCollapse.imports()
-		                                                    .filter(next -> CollapseConfig.containsReferenceOf(except,
-		                                                                                                       next))
-		                                                    .collect(Collectors.toSet());
-
-		final Set<OWLOntology> transitiveImports = importingImports.stream().flatMap(OWLOntology::imports)
-		                                                           .collect(Collectors.toSet());
-
-		final Set<OWLOntology> mergingImports =
-				toCollapse.imports().filter(next -> !(importingImports.contains(next) ||
-				transitiveImports.contains(next))).collect(Collectors.toSet());
-		mergingImports.add(toCollapse);
-
-		importingImports.forEach(next -> {
-			final var iri = next.getOntologyID().getOntologyIRI().get();
-			LOGGER.info("{} will be imported instead of merged", iri);
-			collapsed.applyChange(
-					new AddImport(collapsed, OWLManager.getOWLDataFactory().getOWLImportsDeclaration(iri)));
-		});
-
-		mergingImports.forEach(next -> collapsed.addAxioms(next.axioms(Imports.EXCLUDED)));
-
-	}
-
-	private static IRI getRequestedIRI(final CollapseConfig collapseConfig, final HasOntologyID toCollapse) {
-		return Optional.ofNullable(collapseConfig.newIri()).or(() -> toCollapse.getOntologyID().getOntologyIRI())
-		               .orElseThrow(exceptionSupplier("No requested IRI: " + collapseConfig));
-	}
-
-	private OWLOntology getReferencedOntology(final CollapseConfig collapseConfig) {
-		return ontologyManager.getOntologyManager().ontologies().filter(collapseConfig::isReferenceOf).findFirst()
-		                      .orElseThrow(exceptionSupplier("Cannot resolve " + collapseConfig));
-	}
-
-	private static Supplier<RuntimeException> exceptionSupplier(final String message) {
-		return () -> {
-			throw new RuntimeException(message);
-		};
-	}
-
-
+/** Pure in-memory aggregation. The exporter alone owns document paths and writes. */
+public final class Collapser {
+    public Map<String, OWLOntology> collapse(OntologyManager working, OntologyConfig config) throws Exception {
+        var result = new LinkedHashMap<>(working.documents());
+        var manager = OWLManager.createOWLOntologyManager();
+        var outputIris = new HashSet<IRI>();
+        for (var request : config.toCollapse()) {
+            var root = working.resolve(request.ontology());
+            var closure = root.getImportsClosure();
+            var retained = new LinkedHashSet<OWLOntology>();
+            for (var reference : request.except()) {
+                var ontology = working.resolve(reference);
+                if (ontology.equals(root) || !closure.contains(ontology))
+                    throw new IllegalArgumentException("Collapse exception must be an imported ontology: " + reference);
+                retained.add(ontology);
+            }
+            var excluded = new HashSet<OWLOntology>();
+            retained.forEach(o -> excluded.addAll(o.getImportsClosure()));
+            IRI iri = request.newIri() == null ? root.getOntologyID().getOntologyIRI().orElseThrow() : request.newIri();
+            if (!outputIris.add(iri)) throw new IllegalArgumentException("Duplicate collapsed ontology IRI: " + iri);
+            var collapsed = manager.createOntology(iri);
+            closure.stream().filter(o -> !excluded.contains(o)).forEach(o -> collapsed.addAxioms(o.getAxioms()));
+            root.annotations().forEach(a -> manager.applyChange(new AddOntologyAnnotation(collapsed, a)));
+            retained.forEach(o -> manager.applyChange(new AddImport(collapsed,
+                manager.getOWLDataFactory().getOWLImportsDeclaration(o.getOntologyID().getOntologyIRI().orElseThrow()))));
+            String name = request.outPath().toString();
+            var existing = result.get(name);
+            if (existing != null && !existing.getOntologyID().getOntologyIRI().orElseThrow().equals(iri))
+                throw new IllegalArgumentException("Export filename collides with another ontology: " + name);
+            result.put(name, collapsed);
+        }
+        return Collections.unmodifiableMap(result);
+    }
 }

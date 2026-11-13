@@ -2,81 +2,98 @@ name: Evaluation
 on:
   workflow_dispatch:
   push:
-    paths:
-      - '**'
-      - '!docs/**'
   pull_request:
-    paths:
-      - '**'
-      - '!docs/**'
   release:
-    types: [created]
-    paths:
-      - '**'
-      - '!docs/**'
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evaluation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  workflow-lint:
+    name: Workflow lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Lint workflows
+        env:
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            -o "$RUNNER_TEMP/actionlint.tar.gz"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color
+
   compile:
     name: Compile SOMA
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          persist-credentials: false
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: 'maven'
 
       - name: Compile
         run: |
           bash ./mvnw -B -ntp verify -f scripts/java/pom.xml -Dsoma.version=current
 
       - name: Upload reasoner inputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: SOMA Reasoner Inputs
           path: ./build/ci/work/
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Upload processing reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: SOMA Processing Reports
           path: |
             ./build/ci/reports/
             ./build/ci/manifest.json
+          retention-days: 7
 
       - name: Upload OWL file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: SOMA OWL
           path: ./build/ci/dist/owl/
+          retention-days: 7
+          if-no-files-found: error
 
-      - name: Upload OWL files for Documentation
-        uses: actions/upload-artifact@v4
-        with:
-          name: SOMA Files for Documentation
-          path: ./build/ci/dist/owl/
-          retention-days: 2
 
   pitfalls:
     name: OOPS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     needs: compile
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: SOMA OWL
           path: ./build/ci/dist/owl/
@@ -85,37 +102,41 @@ jobs:
         run: mkdir -p ./build/ci/reports
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
 
       - name: Install python dependencies
         run: |
-          sudo python -m pip install --upgrade pip
-          sudo pip install requests
+          python -m pip install -r .github/requirements-ci.txt
 
       - name: Find pitfalls
-        run: sudo python ./scripts/oops.py $GITHUB_WORKSPACE/build/ci/dist/owl/SOMA-HOME.owl $GITHUB_WORKSPACE/build/ci/reports
+        run: python ./scripts/oops.py build/ci/dist/owl/SOMA-HOME.owl build/ci/reports
 
       - name: Generate annotations
-        run: sudo python ./scripts/oops-github.py $GITHUB_WORKSPACE/build/ci/reports/oops.xml
+        run: python ./scripts/oops-github.py build/ci/reports/oops.xml
 
       - name: Upload pitfalls
-        uses: actions/upload-artifact@v1
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: OOPS Results
           path: ./build/ci/reports/oops.xml
+          retention-days: 7
 
   consistency:
     name: HermiT
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     needs: compile
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: SOMA Reasoner Inputs
           path: ./build/ci/work
@@ -123,18 +144,35 @@ jobs:
       - name: Create report directory
         run: mkdir -p ./build/ci/reports
 
+      - name: Setup Java
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Resolve HermiT and its managed dependencies
+        run: >-
+          bash ./mvnw -B -ntp -f scripts/java/pom.xml
+          org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies
+          -DincludeScope=test -DoutputDirectory="$GITHUB_WORKSPACE/build/ci/tools"
+
       - name: HermiT
-        uses: ./.github/actions/hermit
-        with:
-          args: ./build/ci/work/SOMA-HOME.owl
+        run: |
+          java -Xmx2g -cp 'build/ci/tools/*' org.semanticweb.HermiT.cli.CommandLine \
+            --output=build/ci/reports/hermit.output --classify --classifyOPs \
+            "file://$GITHUB_WORKSPACE/build/ci/work/SOMA-HOME.owl"
+          python scripts/hermit_test.py -o build/ci/reports/hermit.html build/ci/reports/hermit.output
 
-      - name: Print HermiT output
-        run: cat ./hermit.output
+      - name: Upload HermiT results
         if: always()
-
-      - name: Evaluate HermiT output
-        if: success()
-        uses: docker://python:3.7.6-slim
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          args: python ./scripts/hermit_test.py -o ./build/ci/reports/hermit.html ./hermit.output
+          name: HermiT Results
+          path: build/ci/reports/
+          retention-days: 7
 

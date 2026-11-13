@@ -1,0 +1,44 @@
+# CI foundation
+
+`Evaluation` runs on every push and pull request, including documentation-only
+changes. `Workflow lint` and `Compile SOMA` keep stable check names. There are no
+path filters that could leave required checks pending. Configure required checks
+in repository settings separately; these workflows do not change branch rules.
+
+All third-party Actions use full commit SHAs with release comments. Dependabot
+checks Actions, the Java Maven project and the Python requirements weekly.
+Review updates before merging, including runtime and runner requirements.
+The Maven Wrapper pins and verifies Maven independently of the runner installation.
+The actionlint binary is pinned to v1.7.12 and its SHA-256; update its URL and
+checksum together in `evaluation.yml`. Run actionlint locally before committing
+workflow changes. The hosted lint job also uses the runner's ShellCheck.
+
+Jobs use Ubuntu 24.04, JDK 25 and Python 3.12 directly, with explicit timeouts.
+HermiT uses the test dependencies managed by `scripts/java/pom.xml` instead of
+building an obsolete Docker image. Python packages are installed without sudo;
+sudo is used only to install TeX packages on disposable documentation runners.
+
+Workflow permissions default to `contents: read`. PR jobs receive no secrets,
+use `pull_request`, and never use `pull_request_target`. Every checkout disables
+persisted credentials. No dependency or build caches are restored or saved:
+PRs and trusted publication jobs cannot exchange mutable build caches. Artifacts
+are transferred by exact name within the same run; documentation additionally
+specifies the successful upstream run ID and checks out that run's head SHA.
+Artifacts expire after seven days; required uploads reject missing files.
+Diagnostic reports are uploaded even when preceding checks fail.
+
+Evaluation runs cancel older runs for the same PR or ref. Documentation runs
+cancel older runs for the same branch. Deployment runs serialize under one group
+and never cancel an ongoing publication. The deployment build has read access;
+only its final publication job has `contents: write`, using `GITHUB_TOKEN` rather
+than a personal access token. Release tags pass through environment variables and
+are restricted to a single safe path component before reaching any output path.
+Publication preserves existing files and version archives (`clean: false`).
+
+This is the A4 infrastructure foundation. Full reasoner coverage, parser and
+external OOPS behavior belong to phase B. Documentation build validation and
+publication gating on *all* semantic checks, release trust rules, archive/URL
+inventory and replacement of legacy external OntoMetrics belong to phase C.
+Deployment still builds independently of Evaluation; do not treat A4 as the
+completed publication gate. A test PR must never be merged or published merely
+to validate this foundation.

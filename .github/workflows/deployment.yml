@@ -1,142 +1,117 @@
 name: Deployment
 on:
   push:
-    branches:
-      - master
-    paths:
-      - '**'
+    branches: [master]
   release:
-    branches:
-      - master
-    types: [created]
-    paths:
-      - '**'
+    types: [published]
+
+permissions:
+  contents: read
+
+# Serialize the entire run so two publications cannot interleave.
+concurrency:
+  group: deployment-gh-pages
+  cancel-in-progress: false
 
 jobs:
+  build:
+    name: Prepare deployment
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version=current
+          if [[ "$EVENT_NAME" == release ]]; then
+            version="$RELEASE_TAG"
+            if [[ ! "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$ || "$version" == current ]]; then
+              echo 'Invalid release tag' >&2
+              exit 1
+            fi
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Setup Java
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Compile
+        env:
+          SOMA_VERSION: ${{ steps.version.outputs.version }}
+        run: bash ./mvnw -B -ntp verify -f scripts/java/pom.xml "-Dsoma.version=$SOMA_VERSION"
+      - name: Install TeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y latexmk texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Compile NEEM Handbook
+        run: |
+          make -f docs/NEEM-handbook/Makefile
+          cp docs/NEEM-handbook/main.pdf build/ci/dist/files/NEEM-Handbook.pdf
+      - name: Upload deployment inputs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Deployment Inputs
+          path: build/ci/dist/
+          if-no-files-found: error
+          retention-days: 7
+
   deployment:
     name: Deployment
-    runs-on: ubuntu-latest
-
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
-
-      - name: Setup Java
-        uses: actions/setup-java@v3
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          distribution: 'temurin'
-          java-version: '25'
-          cache: 'maven'
-
-      - name: Compile current
-        if: startsWith(github.ref, 'refs/tags/') != true
-        run: |
-          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml -Dsoma.version=current
-
-      - name: Compile tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          bash ./mvnw -B -ntp verify -f scripts/java/pom.xml "-Dsoma.version=${{ github.event.release.tag_name }}"
-
-      - name: Upload SOMA
-        uses: actions/upload-artifact@v1
+          name: Deployment Inputs
+          path: build/ci/dist/
+      - name: Deploy owl
+        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4.9.0
         with:
-          name: SOMA Ontology
-          path: ./build/ci/dist/owl/SOMA.owl
-
-      - name: Upload SOMA-HOME
-        uses: actions/upload-artifact@v1
+          token: ${{ github.token }}
+          branch: gh-pages
+          folder: build/ci/dist/owl
+          target-folder: owl/${{ needs.build.outputs.version }}
+          clean: false
+      # Legacy external metrics remain until C2; only trusted deployment runs reach this step.
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          name: SOMA-HOME Ontology
-          path: ./build/ci/dist/owl/SOMA-HOME.owl
-
-      - name: Upload DUL
-        uses: actions/upload-artifact@v1
-        with:
-          name: DUL Ontology
-          path: ./build/ci/dist/owl/DUL.owl
-
-      - name: Compile NEEM Handbook
-        uses: docker://blang/latex:ubuntu
-        with:
-          args: make -f ./docs/NEEM-handbook/Makefile
-      
-      - name: Copy NEEM Handbook
-        run: sudo cp $GITHUB_WORKSPACE/docs/NEEM-handbook/main.pdf $GITHUB_WORKSPACE/build/ci/dist/files/NEEM-Handbook.pdf
-      
-      - name: Deploy files current
-        uses: JamesIves/github-pages-deploy-action@releases/v3
-        if: github.ref == 'refs/heads/master'
-        with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: build/ci/dist/files
-          TARGET_FOLDER: /files/current
-
-      - name: Deploy owl current
-        uses: JamesIves/github-pages-deploy-action@releases/v3
-        if: github.ref == 'refs/heads/master'
-        with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: build/ci/dist/owl/
-          TARGET_FOLDER: /owl/current
-
-      - name: Deploy owl tag
-        uses: JamesIves/github-pages-deploy-action@releases/v3
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: build/ci/dist/owl/
-          TARGET_FOLDER: owl/${{ github.event.release.tag_name }}
-          #TARGET_FOLDER: owl/${{ GITHUB_REF/refs\/tags\// }}
-          #TARGET_FOLDER: owl/${{ GITHUB_REF#refs/tags/ }}
-
-      # Metrics have to be created after the deployment step, because 
-      # OntoMetrics only allows POST with an URI at the moment
+          python-version: '3.12'
       - name: Metrics
-        if: github.ref == 'refs/heads/master'
+        env:
+          SOMA_VERSION: ${{ needs.build.outputs.version }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          sudo ./scripts/OntoMetrics.sh \
-          https://raw.githubusercontent.com/ease-crc/soma/gh-pages/owl/current/SOMA.owl \
-          $GITHUB_WORKSPACE/build/ci/dist/files
-
-      - name: Metrics
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          sudo ./scripts/OntoMetrics.sh \
-          https://raw.githubusercontent.com/ease-crc/soma/gh-pages/owl/${{ github.event.release.tag_name }}/SOMA.owl \
-          $GITHUB_WORKSPACE/build/ci/dist/files
-
+          bash scripts/OntoMetrics.sh \
+            "https://raw.githubusercontent.com/$REPOSITORY/gh-pages/owl/$SOMA_VERSION/SOMA.owl" \
+            "$GITHUB_WORKSPACE/build/ci/dist/files"
       - name: Upload Metrics
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Metrics
-          path: ./build/ci/dist/files/metrics.json
-
-      - name: Deploy files current
-        uses: JamesIves/github-pages-deploy-action@releases/v3
-        if: github.ref == 'refs/heads/master'
+          path: build/ci/dist/files/metrics.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Deploy files
+        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4.9.0
         with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: build/ci/dist/files
-          TARGET_FOLDER: /files/current
-
-      - name: Deploy files tag
-        uses: JamesIves/github-pages-deploy-action@releases/v3
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: build/ci/dist/files/
-          TARGET_FOLDER: files/${{ github.event.release.tag_name }}
-          #TARGET_FOLDER: owl/${{ GITHUB_REF/refs\/tags\// }}
-          #TARGET_FOLDER: owl/${{ GITHUB_REF#refs/tags/ }}
-
-      - name: Deploy failure
-        if: failure()
-        run: echo Deployment failed. If the other steps succeeded, maybe no ACCESS_TOKEN was set?
+          token: ${{ github.token }}
+          branch: gh-pages
+          folder: build/ci/dist/files
+          target-folder: files/${{ needs.build.outputs.version }}
+          clean: false

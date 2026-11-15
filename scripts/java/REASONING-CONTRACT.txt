@@ -1,0 +1,102 @@
+Reasoning contract
+==================
+
+Scope
+ReasoningReport, ReasoningProtocol and ReasoningProcess define the common local
+adapter boundary. HermitEvaluator uses OWLAPI with the pinned
+application dependency HermiT 1.4.5.519. HermitCli supervises HermitWorker with
+per-input heap and wall-time limits and records metadata separately from the
+strict protocol v1 result. ReasoningContractTest uses the production evaluator.
+KoncludeWorker uses a
+checksum-pinned native release, OWL/XML classification and direct object/data
+existential queries. It shares the local loader and supervised CLI; see
+KONCLUDE.md for installation and supported-input limits.
+Konclude is local-only and excluded from CI tests and the quality gate; HermiT
+is the sole CI reasoner.
+The CI quality gate combines HermiT and local OOPS reports. Passing Maven tests
+does not assert that SOMA is consistent/coherent; run HermitCli --suite as well.
+The default suite validates every file and reasons over the main roots plus
+uncovered theories. Coverage requires one selected root to contain all logical
+axioms (ignoring annotations) and the relevant named signature of a module;
+separate selected theories are never unioned to claim coverage. Public roots
+remain separate even when one imports another. --scope=modules enables optional
+isolated diagnostics. See scripts/README.md for commands and coverage details.
+
+Report and status
+- toolErrors: load/import, process, protocol or reasoner failures. These are
+  separate from ontology findings. An incomplete run always yields TOOL_ERROR.
+- consistent: true/false after the consistency check; null if not established.
+  Check consistency first. A globally inconsistent ontology gets INCONSISTENT;
+  class/property results are not meaningful and their lists must remain empty.
+- unsatisfiableClasses: named classes that cannot have instances.
+- emptyObjectProperties: named object properties for which
+  ObjectSomeValuesFrom(property, owl:Thing) is unsatisfiable.
+- emptyDataProperties: named data properties for which
+  DataSomeValuesFrom(property, rdfs:Literal) is unsatisfiable.
+- qualityFindings: additional quality findings, kept separate from the above.
+  In version 1 these are blocking findings; see scripts/QUALITY-GATE.md for the policy.
+
+Both property checks are REQUIRED for complete=true on a consistent ontology.
+DataProperty coverage includes datatype-induced emptiness, not only an
+unsatisfiable named domain. A reasoner that cannot perform the data check must
+report an incomplete run/tool error, or delegate it explicitly to another
+adapter; silently omitting it is forbidden. All entity checks cover the complete
+import closure, using the same signature as the reasoned input. Under OWL's open
+world semantics a property without asserted values need not be logically empty.
+
+Use full, unbracketed entity IRIs. The report removes owl:Nothing,
+owl:bottomObjectProperty and owl:bottomDataProperty from their respective lists,
+deduplicates and sorts all lists, and preserves every other finding.
+Lists are immutable and required, including empty lists.
+
+Status precedence: TOOL_ERROR, INCONSISTENT, FINDINGS, PASS.
+Only a complete, consistent report with every list empty yields PASS.
+ReasoningReport.exitCode() maps PASS to 0, semantic findings/INCONSISTENT to 1,
+and TOOL_ERROR to 2. Technical failure can never be hidden by semantic results.
+
+Subprocess protocol v1
+Pass command arguments as a list, with a positive timeout and log directory to
+ReasoningProcess.run. Each invocation retains unique stdout (.json) and stderr
+(.stderr) files, so output from previous runs cannot substitute for missing
+output. Timeout terminates the child and currently discoverable descendants.
+IOException writing/reading logs and interruption propagate to the caller;
+callers must treat exceptions as technical failures, never successful checks.
+
+The adapter's PROCESS exit must be 0 when it delivered a valid report, INCLUDING
+when that report contains semantic findings or consistent=false. Nonzero exit
+means process/tool failure and overrides even valid success JSON on stdout.
+The consumer applies ReasoningReport.exitCode() separately as the GATE exit.
+Diagnostics go to stderr; stdout contains exactly one JSON object:
+
+{"schemaVersion":1,"complete":true,"consistent":true,"toolErrors":[],
+ "unsatisfiableClasses":[],"emptyObjectProperties":[],
+ "emptyDataProperties":[],"qualityFindings":[]}
+
+All eight fields and their types are required. No extra/duplicate fields,
+trailing JSON, null lists, blank findings or unsupported versions are accepted.
+No externally supplied status is trusted; the consumer derives it. A missing
+consistency value on a completed run is invalid. complete=false is permitted
+for diagnostic partial reports and always yields TOOL_ERROR.
+
+Fixture expectations (src/test/resources/reasoning)
+consistent.ofn: PASS; all finding lists empty, including explicit builtins.
+inconsistent.ofn: INCONSISTENT; Impossible has an asserted instance.
+unsatisfiable-class.ofn: FINDINGS; only class urn:b1:Impossible.
+empty-object-property.ofn: FINDINGS; only property urn:b1:emptyObject. Two
+  disjoint, individually satisfiable domain classes force the property empty;
+  no named class is unsatisfiable.
+empty-data-property.ofn: FINDINGS; only property urn:b1:emptyData. Disjoint
+  string/integer ranges force emptiness without any unsatisfiable named class.
+missing-import.ofn: TOOL_ERROR; strict local catalog refuses the unmapped import
+  without a network lookup. No semantic results are claimed.
+
+Additional executable tests cover malformed/empty/incomplete output, wrong
+field types and versions, duplicate/trailing JSON, builtin filtering, quality
+findings, failed launch, nonzero exit with apparent success output, and timeout
+after apparent success output. The process helper uses the same JDK as Maven,
+without a shell or external service.
+
+Run from the repository root:
+  ./mvnw -B -ntp verify -f scripts/java/pom.xml
+  Windows: .\mvnw.cmd -B -ntp verify -f scripts/java/pom.xml
+The contract tests run in the normal Maven test phase; no optional profile.

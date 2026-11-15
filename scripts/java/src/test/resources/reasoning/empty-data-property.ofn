@@ -1,0 +1,8 @@
+Prefix(:=<urn:b1:>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Ontology(<urn:b1:empty-data-property>
+ Declaration(Class(:A))
+ Declaration(DataProperty(:emptyData))
+ DataPropertyRange(:emptyData xsd:string)
+ DataPropertyRange(:emptyData xsd:integer)
+)

@@ -1,0 +1,10 @@
+Prefix(:=<urn:b1:>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Ontology(<urn:b1:consistent>
+ Declaration(Class(:A))
+ Declaration(ObjectProperty(:object))
+ Declaration(DataProperty(:data))
+ Declaration(Class(owl:Nothing))
+ Declaration(ObjectProperty(owl:bottomObjectProperty))
+ Declaration(DataProperty(owl:bottomDataProperty))
+)

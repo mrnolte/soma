@@ -1,0 +1,7 @@
+Prefix(:=<urn:b1:>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Ontology(<urn:b1:inconsistent>
+ Declaration(Class(:Impossible))
+ SubClassOf(:Impossible owl:Nothing)
+ ClassAssertion(:Impossible :individual)
+)

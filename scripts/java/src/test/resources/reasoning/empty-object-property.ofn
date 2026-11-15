@@ -1,0 +1,10 @@
+Prefix(:=<urn:b1:>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Ontology(<urn:b1:empty-object-property>
+ Declaration(Class(:A))
+ Declaration(Class(:B))
+ Declaration(ObjectProperty(:emptyObject))
+ DisjointClasses(:A :B)
+ ObjectPropertyDomain(:emptyObject :A)
+ ObjectPropertyDomain(:emptyObject :B)
+)

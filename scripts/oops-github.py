@@ -39,12 +39,18 @@ def get_affected_soma_iris(xml_elem):
 def get_resource_names(iris):
 	return list(map(lambda x: x.split('#')[-1],iris))
 
-def report_pitfall(name,descr,level,iris):
+# Critical pitfalls fail the check; all others are reported as warnings.
+counts = {}
+
+def report_pitfall(pitfall,descr,level,iris):
 	names = get_resource_names(iris)
-	if level in ("Critical", "Important", "Minor"):
+	if level == "Critical":
+		msg_level="error"
+	elif level in ("Important", "Minor"):
 		msg_level="warning"
 	else:
 		msg_level="debug"
+	counts.setdefault((level, pitfall), set()).update(names)
 	for name in names:
 		needle = find_entity(name)
 		if needle!=None:
@@ -81,7 +87,24 @@ def run(xml_file):
 		if len(iris)>0:
 			report_suggestion(name,descr,iris)
 
+def write_summary():
+	lines = ["## OOPS! pitfalls", "", "| Importance | Pitfall | Affected SOMA entities |", "| --- | --- | --- |"]
+	order = {"Critical": 0, "Important": 1, "Minor": 2}
+	for (level, pitfall), names in sorted(counts.items(), key=lambda item: (order.get(item[0][0], 3), item[0][1])):
+		lines.append(f"| {level} | {pitfall} | {len(names)} |")
+	if not counts:
+		lines.append("| | None | |")
+	# GitHub shows only the first ten error annotations of a step, so list all critical findings here.
+	for (level, pitfall), names in sorted(counts.items()):
+		if level == "Critical":
+			lines += ["", f"**{pitfall}:** " + ", ".join(sorted(names))]
+	with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+		summary.write("\n".join(lines) + "\n")
+
 if __name__ == "__main__":
 	for xml_file in sys.argv[1:]:
 		run(xml_file)
+	if "GITHUB_STEP_SUMMARY" in os.environ:
+		write_summary()
+	sys.exit(1 if any(level == "Critical" for level, _ in counts) else 0)
 

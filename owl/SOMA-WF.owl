@@ -9,8 +9,8 @@ Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
 
 
 Ontology(<http://www.ease-crc.org/ont/SOMA-WF.owl>
-Import(<http://www.ease-crc.org/ont/DUL.owl>)
 Import(<http://www.ease-crc.org/ont/SOMA-ACT.owl>)
+Import(<http://www.ease-crc.org/ont/SOMA-DUL-ANNOTATIONS.owl>)
 Import(<http://www.ease-crc.org/ont/SOMA-STATE.owl>)
 Import(<http://www.ease-crc.org/ont/SOMA.owl>)
 Annotation(rdfs:comment "SOMA-WF.owl defines concepts and relations that make it possible to use an ABox to describe, in detail, how a workflow proceeds in terms of how instances of function calls connect to each other and how data objects are used as parameters or produced as results.")

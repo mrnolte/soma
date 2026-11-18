@@ -14,4 +14,6 @@
     <uri id="User Edited Redirect" name="http://www.ease-crc.org/ont/SOMA-STATE.owl" uri="SOMA-STATE.owl"/>
     <uri id="User Edited Redirect" name="http://www.ease-crc.org/ont/SOMA-SAY.owl" uri="SOMA-SAY.owl"/>
     <uri id="User Edited Redirect" name="http://www.ease-crc.org/ont/SOMA-WF.owl" uri="SOMA-WF.owl"/>
+    <uri name="http://www.ontologydesignpatterns.org/ont/dul/DUL.owl" uri="DUL.owl"/>
+    <uri name="http://www.ease-crc.org/ont/SOMA-DUL-ANNOTATIONS.owl" uri="SOMA-DUL-ANNOTATIONS.owl"/>
 </catalog>

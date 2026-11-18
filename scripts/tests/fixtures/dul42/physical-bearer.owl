@@ -1,0 +1,15 @@
+Prefix(:=<urn:soma:tests:dul42:>)
+Prefix(soma:=<http://www.ease-crc.org/ont/SOMA.owl#>)
+Prefix(dul:=<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#>)
+
+Ontology(<urn:soma:tests:dul42:physical-bearer>
+Import(<http://www.ease-crc.org/ont/SOMA-HOME.owl>)
+Declaration(NamedIndividual(:disposition))
+Declaration(NamedIndividual(:affordance))
+Declaration(NamedIndividual(:bearerRole))
+Declaration(NamedIndividual(:bearer))
+ObjectPropertyAssertion(soma:hasAffordance :disposition :affordance)
+ObjectPropertyAssertion(soma:definesBearer :affordance :bearerRole)
+ObjectPropertyAssertion(dul:classifies :bearerRole :bearer)
+ClassAssertion(dul:PhysicalObject :bearer)
+)

@@ -1,0 +1,35 @@
+Prefix(:=<http://www.ease-crc.org/ont/SOMA.owl#>)
+Prefix(dul:=<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+
+
+Ontology(<http://www.ease-crc.org/ont/SOMA-DUL-ANNOTATIONS.owl>
+Import(<http://www.ease-crc.org/ont/DUL.owl>)
+Annotation(rdfs:comment "Supplemental labels and documentation for DUL entities maintained by SOMA. This module contains no logical axioms; DUL's original annotations remain available through the import."@en)
+Annotation(rdfs:label "SOMA annotations for DUL"@en)
+
+
+
+AnnotationAssertion(rdfs:label dul:DesignedSubstance "Designed substance"@en)
+AnnotationAssertion(rdfs:label dul:InformationEntity "Information Entity"@en)
+AnnotationAssertion(rdfs:isDefinedBy dul:ObjectAggregate <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl>)
+AnnotationAssertion(rdfs:label dul:ObjectAggregate "Object aggregate"@en)
+AnnotationAssertion(rdfs:isDefinedBy dul:Parthood <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl>)
+AnnotationAssertion(rdfs:label dul:SpatioTemporalRegion "Spatio-temporal region"@en)
+AnnotationAssertion(rdfs:isDefinedBy dul:TimeIndexedRelation <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl>)
+AnnotationAssertion(rdfs:label dul:TimeIndexedRelation "Time-indexed relation"@en)
+AnnotationAssertion(rdfs:label dul:associatedWith "associated with"@en)
+AnnotationAssertion(rdfs:comment dul:hasInScope "Relates a situation to another situation in its scope. In particular, DUL infers this relation when the first situation is a setting for a description that the second situation satisfies."@en)
+AnnotationAssertion(rdfs:label dul:hasInScope "has in scope"@en)
+AnnotationAssertion(rdfs:isDefinedBy dul:includesPart <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl>)
+AnnotationAssertion(rdfs:label dul:includesPart "includes part"@en)
+AnnotationAssertion(rdfs:isDefinedBy dul:includesWhole <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl>)
+AnnotationAssertion(rdfs:label dul:includesWhole "includes whole"@en)
+AnnotationAssertion(rdfs:seeAlso dul:isPropertPartOf dul:hasProperPart)
+AnnotationAssertion(rdfs:isDefinedBy dul:realizesSelfInformation <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl>)
+AnnotationAssertion(rdfs:label dul:realizesSelfInformation "realizes self-information"@en)
+)

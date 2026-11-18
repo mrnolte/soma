@@ -9,7 +9,7 @@ Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
 
 
 Ontology(<http://www.ease-crc.org/ont/SOMA-ACT.owl>
-Import(<http://www.ease-crc.org/ont/DUL.owl>)
+Import(<http://www.ease-crc.org/ont/SOMA-DUL-ANNOTATIONS.owl>)
 Import(<http://www.ease-crc.org/ont/SOMA-PROC.owl>)
 Import(<http://www.ease-crc.org/ont/SOMA-STATE.owl>)
 Import(<http://www.ease-crc.org/ont/SOMA.owl>)
@@ -574,7 +574,7 @@ SubClassOf(SOMA:Avoiding SOMA:Navigating)
 AnnotationAssertion(rdfs:comment SOMA:Capability "The tendency of an object (the bearer) to be able to perform certain tasks together with others (the triggers) and in which the Bearer is the executor of the associated Task and will therefore usually be an Agent.")
 AnnotationAssertion(rdfs:label SOMA:Capability "Capability")
 SubClassOf(SOMA:Capability SOMA:Disposition)
-SubClassOf(SOMA:Capability ObjectExactCardinality(1 <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isDescribedBy> ObjectIntersectionOf(SOMA:Affordance ObjectExactCardinality(1 SOMA:definesBearer <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Role>) ObjectExactCardinality(1 SOMA:definesTrigger <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Role>) ObjectExactCardinality(1 <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#definesTask> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Task>))))
+SubClassOf(SOMA:Capability ObjectExactCardinality(1 SOMA:hasAffordance ObjectIntersectionOf(SOMA:Affordance ObjectExactCardinality(1 SOMA:definesBearer <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Role>) ObjectExactCardinality(1 SOMA:definesTrigger <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Role>) ObjectExactCardinality(1 <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#definesTask> <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Task>))))
 
 # Class: SOMA:Catching (Catching)
 

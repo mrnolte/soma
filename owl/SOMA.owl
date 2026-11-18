@@ -9,7 +9,7 @@ Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
 
 
 Ontology(<http://www.ease-crc.org/ont/SOMA.owl>
-Import(<http://www.ease-crc.org/ont/DUL.owl>)
+Import(<http://www.ease-crc.org/ont/SOMA-DUL-ANNOTATIONS.owl>)
 Annotation(rdfs:comment "SOMA main OWL file.
 
 Useful for defining a common set of imports for all other SOMA modules; currently, this set only includes DUL.

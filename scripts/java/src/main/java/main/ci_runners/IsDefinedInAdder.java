@@ -46,6 +46,11 @@ public class IsDefinedInAdder implements CIRunnable {
 			return;
 		}
 		final var ontologyIRI = ontology.getOntologyID().getOntologyIRI().get();
+		// DUL is an external dependency; SOMA supplements it in its annotation module.
+		if (ontologyIRI.toString().equals("http://www.ontologydesignpatterns.org/ont/dul/DUL.owl")
+		            || ontologyIRI.toString().equals("http://www.ease-crc.org/ont/DUL.owl")) {
+			return;
+		}
 		LOGGER.info("Checking {} for missing rdfs:isDefinedIn", ontologyIRI);
 
 		final var df = OWLManager.getOWLDataFactory();

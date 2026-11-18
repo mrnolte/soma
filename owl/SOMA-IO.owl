@@ -505,8 +505,8 @@ The Behaviour are the algoirthms used by the Software Instance, e.g., Bubble Sor
 The Structure is the organization of files, classes, objects and method calls of the program code."@en)
 AnnotationAssertion(rdfs:label SOMA:Software "Software"@en)
 SubClassOf(SOMA:Software <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Design>)
-SubClassOf(SOMA:Software ObjectSomeValuesFrom(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#describes> SOMA:Software_Configuration))
-SubClassOf(SOMA:Software ObjectAllValuesFrom(<http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#describes> ObjectUnionOf(SOMA:SoftwareInstance SOMA:Software_Configuration)))
+SubClassOf(SOMA:Software ObjectSomeValuesFrom(SOMA:isDesignFor SOMA:Software_Configuration))
+SubClassOf(SOMA:Software ObjectAllValuesFrom(SOMA:isDesignFor ObjectUnionOf(SOMA:SoftwareInstance SOMA:Software_Configuration)))
 
 # Class: SOMA:SoftwareInstance (Software instance)
 
@@ -539,7 +539,7 @@ We support seperate views:
 3. It describes not the files, but their content (the program code), which can also be seen as the part-whole relationship if one abstracts away from the files."@en)
 AnnotationAssertion(rdfs:label SOMA:Software_Configuration "Software Configuration"@en)
 SubClassOf(SOMA:Software_Configuration <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Configuration>)
-SubClassOf(SOMA:Software_Configuration ObjectExactCardinality(1 <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isDescribedBy> SOMA:Software))
+SubClassOf(SOMA:Software_Configuration ObjectExactCardinality(1 SOMA:isDesignedBy SOMA:Software))
 
 # Class: SOMA:Source_Code (Source code)
 

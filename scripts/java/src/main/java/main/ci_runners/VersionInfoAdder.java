@@ -40,6 +40,14 @@ public class VersionInfoAdder implements CIRunnable {
 
 	private static void addVersionInfo(final OWLOntology ontology, final String version) {
 
+		// Keep DUL's own release version instead of adding the SOMA build version.
+		if (ontology.getOntologyID().getOntologyIRI()
+		            .filter(iri -> iri.toString().equals("http://www.ontologydesignpatterns.org/ont/dul/DUL.owl")
+		                    || iri.toString().equals("http://www.ease-crc.org/ont/DUL.owl"))
+		            .isPresent()) {
+			return;
+		}
+
 		final var df = OWLManager.getOWLDataFactory();
 		final var versionAnnotation = df.getOWLAnnotation(df.getOWLVersionInfo(), df.getOWLLiteral(version));
 		ontology.getOWLOntologyManager().applyChange(new AddOntologyAnnotation(ontology, versionAnnotation));
